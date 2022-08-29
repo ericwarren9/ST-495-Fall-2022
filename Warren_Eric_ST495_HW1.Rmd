@@ -1,0 +1,238 @@
+---
+title: "ST 495-001 HW 1"
+author: "Eric Warren"
+date: '2022-08-28'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Honor Code {.tabset}
+
+I have neither given nor received unauthorized assistance on this test or assignment. -**Eric Warren**
+
+### Problem 1 
+
+I have filled out the survey and indicated that I am fine with either project to work on.
+
+### Problem 2
+
+Here we are going to create the first 1000 Fibonacci numbers and be able to print them out below.
+```{r}
+library(tidyverse)
+fibonacci <- NULL
+fibonacci[1] <- 1
+fibonacci[2] <- 1
+for (i in 3:1000) {
+  fibonacci[i] <- fibonacci[i-2] + fibonacci[i-1]
+}
+tibble(fibonacci)
+```
+
+Now we are going to print the ratios to make sure that they work.
+```{r}
+fibonacciRatio <- NULL
+for (i in 1:999) {
+  fibonacciRatio[i] <- fibonacci[i+1] / fibonacci[i]
+}
+term <- 1:999
+ratioPlot <- tibble(term, fibonacciRatio)
+```
+
+Lastly we are going to make the plot to show how the ratios show up over the number of terms.
+```{r}
+ratioPlot %>%
+  ggplot(aes(x = term,
+             y = fibonacciRatio)) +
+  geom_line(color = "blue") +
+  labs(title = "Ratio of Fibonacci Sequence Over Ratio Terms",
+       subtitle = "Over the First 999 Ratio Terms",
+       caption = "Eric Warren",
+       x = "Term Number",
+       y = "Ratio of the Term") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "red",
+                                  face = "bold",
+                                  size = 20,
+                                  hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+We can see that the plot quickly converges to the ratio of `r ratioPlot$fibonacciRatio[667]`.
+
+### Problem 3
+
+Here we are trying to estimate the value of pi using a Monte Carlo simulation. We are going to make a function first to use later to plot the values of pi at a certain iteration.
+```{r}
+# Here we are going to write a function that will create and store values of pi to estimate it for later.
+estimateOfPi <- function(seed = 9, iterations = 10000) {
+  # Set the seed here so results do not change
+  set.seed(seed)
+  
+  # Store the random point coordinates
+  points <- data.frame(x <- runif(min = -1,
+                                  max = 1,
+                                  n = iterations),
+                       y <- runif(min = -1,
+                                  max = 1,
+                                  n = iterations)
+  )
+  
+  # Since I want to plot the number of iterations later, I am going to store the number of iterations that take place
+  points$iterations <- 1:iterations
+  
+  # Here we want to determine the number of points inside the circle, which helps us calculate pi
+  points$withinCircle <- ifelse(sqrt(x ** 2 + y ** 2) <= 1, 1, 0)
+  
+  # Now add up all the values inside the circle and divide it by the number of total points to get the probability. Lastly, multiply by 4 to get the estimate of pi
+  points$estimatePi <- 4 * cumsum(points$withinCircle) / points$iterations
+  
+  #Return the whole tibble to get values needed to make plot
+  return(points)
+}
+```
+
+Now we are going to plot the number of iterations and the estimates of pi.
+```{r}
+# Make the estimates
+piEstimates <- estimateOfPi(9, 10000)
+
+# Plot the estimates
+piEstimates %>%
+  ggplot(aes(x = iterations,
+             y = estimatePi)) +
+  geom_line(color = "red") +
+  labs(title = "Estimate of Pi Over Number of Iterations",
+       subtitle = "Over the First 10,000 Iterations",
+       caption = "Eric Warren",
+       x = "Iteration Number",
+       y = "Estimate of Pi") +
+  geom_hline(yintercept = pi,
+             color = "green") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 20,
+                                  hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+### Problem 4 {.tabset}
+
+Here we are going to examine the babynames data set.
+```{r}
+library(babynames)
+babyNames <- babynames
+maleBabyNames <- babyNames %>%
+  filter(sex == "M")
+femaleBabyNames <- babyNames %>%
+  filter(sex == "F")
+```
+
+#### Part A
+
+This data set has 1,924,665 observations (rows) with 5 variables (columns). This data includes the year that occurred, the sex of a baby, the name the baby received, the number of babies that had that particular name for that year, and the proportion of babies that were named that name for that particular year.
+
+#### Part B
+
+For this data set, there were a total of `r length(unique(babyNames$name))` different names. This is much different from the number of rows because there were a lot of repeat names that people would use of different years. For example, the name "Anna" was used in 1880. That same name is still around today which makes it not unique in the following year. There are also a total of `r length(intersect(maleBabyNames$name, femaleBabyNames$name))` that were used by both sexes.
+
+#### Part C {.tabset}
+
+##### Part 1 
+
+Here we are going to look at the most popular male names in 1900, 1925, 1950, 1975, 2000. 
+```{r}
+#Do 1900 male names
+maleNames1900 <- babyNames %>%
+  filter(sex == "M",
+         year == 1900) %>%
+  arrange(desc(n))
+maleNames1900$name[1]
+
+#Do 1925 male names
+maleNames1925 <- babyNames %>%
+  filter(sex == "M",
+         year == 1925) %>%
+  arrange(desc(n))
+maleNames1925$name[1]
+
+#Do 1950 male names
+maleNames1950 <- babyNames %>%
+  filter(sex == "M",
+         year == 1950) %>%
+  arrange(desc(n))
+maleNames1950$name[1]
+
+#Do 1975 male names
+maleNames1975 <- babyNames %>%
+  filter(sex == "M",
+         year == 1975) %>%
+  arrange(desc(n))
+maleNames1975$name[1]
+
+#Do 2000 male names
+maleNames2000 <- babyNames %>%
+  filter(sex == "M",
+         year == 2000) %>%
+  arrange(desc(n))
+maleNames2000$name[1]
+```
+
+The most common male name in 1900 was `r maleNames1900$name[1]`. The most common male name in 1925 was `r maleNames1925$name[1]`. The most common male name in 1950 was `r maleNames1950$name[1]`. The most common male name in 1975 was `r maleNames1975$name[1]`. The most common male name in 2000 was `r maleNames2000$name[1]`. 
+
+##### Part 2 
+
+Here we are going to look at the most common female names in 2010, 2011, 2012, 2013, and 2014.
+```{r}
+myValues <- c(2010, 2011, 2012, 2013, 2014)
+femaleNames <- babyNames %>%
+  filter(sex == "F",
+         year %in% myValues) %>%
+  arrange(desc(n))
+newFemaleNames = split(femaleNames, femaleNames$year)
+femaleNames2010 <- tibble(newFemaleNames[["2010"]])
+femaleNames2010$name[1]
+femaleNames2011 <- tibble(newFemaleNames[["2011"]])
+femaleNames2011$name[1]
+femaleNames2012 <- tibble(newFemaleNames[["2012"]])
+femaleNames2012$name[1]
+femaleNames2013 <- tibble(newFemaleNames[["2013"]])
+femaleNames2013$name[1]
+femaleNames2014 <- tibble(newFemaleNames[["2014"]])
+femaleNames2014$name[1]
+```
+
+The most common female name in 2010 was `r femaleNames2010$name[1]`. The most common female name in 2011 was `r femaleNames2011$name[1]`. The most common female name in 2012 was `r femaleNames2012$name[1]`. The most common female name in 2013 was `r femaleNames2013$name[1]`. The most common female name in 2014 was `r femaleNames2014$name[1]`.
+
+#### Part D {.tabset}
+
+##### Part 1
+
+Here we are going to examine what the 10 most popular male names are across all the years.
+```{r}
+allMaleNames <- babyNames %>%
+  filter(sex == "M") %>%
+  group_by(name) %>%
+  summarize(total = sum(n)) %>%
+  arrange(desc(total))
+```
+
+The ten most common names in order from most common to lesser are `r allMaleNames$name[1:10]`.
+
+##### Part 2
+
+Here we are going to examine what the 10 most popular female names are across all the years.
+```{r}
+allFemaleNames <- babyNames %>%
+  filter(sex == "F") %>%
+  group_by(name) %>%
+  summarize(total = sum(n)) %>%
+  arrange(desc(total))
+```
+
+The ten most common names in order from most common to lesser are `r allFemaleNames$name[1:10]`.
