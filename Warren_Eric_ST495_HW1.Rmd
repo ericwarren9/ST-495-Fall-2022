@@ -41,6 +41,7 @@ for (i in 1:999) {
 }
 term <- 1:999
 ratioPlot <- tibble(term, fibonacciRatio)
+ratioPlot[c(1:10, 990:999), ]
 ```
 
 Lastly we are going to make the plot to show how the ratios show up over the number of terms.
@@ -100,6 +101,10 @@ Now we are going to plot the number of iterations and the estimates of pi.
 ```{r}
 # Make the estimates
 piEstimates <- estimateOfPi(9, 10000)
+piEstimates[c(1:10, 9991:10000), ] %>%
+  select(iterations,
+         estimatePi) %>%
+  as_tibble()
 
 # Plot the estimates
 piEstimates %>%
