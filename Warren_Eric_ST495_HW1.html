@@ -419,7 +419,31 @@ for (i in 1:999) {
   fibonacciRatio[i] &lt;- fibonacci[i+1] / fibonacci[i]
 }
 term &lt;- 1:999
-ratioPlot &lt;- tibble(term, fibonacciRatio)</code></pre>
+ratioPlot &lt;- tibble(term, fibonacciRatio)
+ratioPlot[c(1:10, 990:999), ]</code></pre>
+<pre><code>## # A tibble: 20 × 2
+##     term fibonacciRatio
+##    &lt;int&gt;          &lt;dbl&gt;
+##  1     1           1   
+##  2     2           2   
+##  3     3           1.5 
+##  4     4           1.67
+##  5     5           1.6 
+##  6     6           1.62
+##  7     7           1.62
+##  8     8           1.62
+##  9     9           1.62
+## 10    10           1.62
+## 11   990           1.62
+## 12   991           1.62
+## 13   992           1.62
+## 14   993           1.62
+## 15   994           1.62
+## 16   995           1.62
+## 17   996           1.62
+## 18   997           1.62
+## 19   998           1.62
+## 20   999           1.62</code></pre>
 <p>Lastly we are going to make the plot to show how the ratios show up
 over the number of terms.</p>
 <pre class="r"><code>ratioPlot %&gt;%
@@ -476,8 +500,34 @@ estimateOfPi &lt;- function(seed = 9, iterations = 10000) {
 of pi.</p>
 <pre class="r"><code># Make the estimates
 piEstimates &lt;- estimateOfPi(9, 10000)
-
-# Plot the estimates
+piEstimates[c(1:10, 9991:10000), ] %&gt;%
+  select(iterations,
+         estimatePi) %&gt;%
+  as_tibble()</code></pre>
+<pre><code>## # A tibble: 20 × 2
+##    iterations estimatePi
+##         &lt;int&gt;      &lt;dbl&gt;
+##  1          1       4   
+##  2          2       2   
+##  3          3       2.67
+##  4          4       2   
+##  5          5       2.4 
+##  6          6       2.67
+##  7          7       2.86
+##  8          8       3   
+##  9          9       3.11
+## 10         10       3.2 
+## 11       9991       3.17
+## 12       9992       3.17
+## 13       9993       3.17
+## 14       9994       3.17
+## 15       9995       3.17
+## 16       9996       3.17
+## 17       9997       3.17
+## 18       9998       3.17
+## 19       9999       3.17
+## 20      10000       3.17</code></pre>
+<pre class="r"><code># Plot the estimates
 piEstimates %&gt;%
   ggplot(aes(x = iterations,
              y = estimatePi)) +
