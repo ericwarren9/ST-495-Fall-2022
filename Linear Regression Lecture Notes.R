@@ -38,3 +38,34 @@ summary(lmFit4)
 
 lmFit5 <- lm(y ~ x1 + x2 + x3 + z1)
 summary(lmFit5)
+
+
+# Load in new data --------------------------------------------------------
+
+library(ISLR2)
+library(MASS)
+Boston <- as_tibble(Boston)
+
+# Do simple regression
+bostonFit <- lm(medv ~ lstat, Boston)
+summary(bostonFit)
+
+# Make confidence intervals
+confint(bostonFit, level = 0.95)
+
+# Also make predictions
+predict(bostonFit, 
+        tibble(lstat = c(5, 50, 90)),
+        interval = "prediction") # Note: 50 and 90 are extrapolated
+
+# Prediction vs confidence intervals
+predict(bostonFit, 
+        tibble(lstat = c(5, 10)),
+        interval = "prediction")
+predict(bostonFit, 
+        tibble(lstat = c(5, 10)),
+        interval = "confidence")
+
+# Diagnostics
+par(mfrow = c(2, 2))
+plot(bostonFit)
