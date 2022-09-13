@@ -140,7 +140,7 @@ lmOnX3 <- lm(y ~ x3)
 summary(lmOnX3)
 ```
 
-1. It has an adjusted *R^2^* value of `r summary(lmOnX3)$adj.r.squared`, which shows that `r summary(lmOnX3)$adj.r.squared * 100`% of the model can be explained by the data of x3. That means that error makes up `r 100 - (summary(lmOnX3)$adj.r.squared * 100)`% of the model, which shows the model is simply just total variation (or error) between points, and that this model is just picking and randomly guessing points.
+1. It has an adjusted *R^2^* value of `r summary(lmOnX3)$adj.r.squared`, which shows that `r max(summary(lmOnX3)$adj.r.squared * 100, 0)`% of the model can be explained by the data of x3. That means that error makes up `r min(100 - (summary(lmOnX3)$adj.r.squared * 100), 100)`% of the model, which shows the model is simply just total variation (or error) between points, and that this model is just picking and randomly guessing points. This makes sense since x3 is supposed to be zero, which means it should just be error making up the model.
 
 2. This model does a fairly good job of matching coefficients, especially with using just one predictor. The intercept of this model is `r lmOnX3$coefficients[[1]]`, which is pretty close to the true intercept of 1; oppositely, the x3 coefficient value is not too far from what it should be of a value of 0 and we get `r lmOnX3$coefficients[[2]]`, which shows that this model is not a bad predictor of x3. This model does a better job than when predicting for x1 and x2 by itself.
 
@@ -213,6 +213,8 @@ lmAnscombe4 <- lm(y4 ~ x4, anscombe)
 3. For the third anscombe regression line, the equation is y3 = `r lmAnscombe3$coefficients[[1]]` + `r lmAnscombe3$coefficients[[2]]` * x3.
 
 4. For the fourth anscombe regression line, the equation is y4 = `r lmAnscombe4$coefficients[[1]]` + `r lmAnscombe4$coefficients[[2]]` * x4.
+
+As we can see all the equations are basically the exact same thing.
 
 #### Part B
 
