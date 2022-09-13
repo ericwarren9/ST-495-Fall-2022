@@ -1,0 +1,417 @@
+---
+title: "ST 495 HW3"
+author: "Eric Warren"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      fig.height = 7,
+                      fig.width = 10)
+```
+
+## Honor Code {.tabset}
+
+I have neither given nor received unauthorized assistance on this test or assignment. -**Eric Warren**
+
+### Problem 1 {.tabset}
+
+#### Read in the data
+
+Here we are going to read in the babynames data set
+```{r}
+library(tidyverse)
+library(babynames)
+babyNames <- as_tibble(babynames)
+```
+
+#### Part A
+
+Here we are going to create a subset the data with female babies named “Mary” from 1880-2014.
+```{r}
+babyNamesMary <- babyNames %>%
+  filter(name == "Mary",
+         sex == "F",
+         year %in% c(1880:2014))
+```
+
+#### Part B
+
+Here we are going to create a subset the data with female babies named “Sophia” from 1880-2014.
+```{r}
+babyNamesSophia <- babyNames %>%
+  filter(name == "Sophia",
+         sex == "F",
+         year %in% c(1880:2014))
+```
+
+#### Part C
+
+Here we are going to construct a plot of the proportion of female babies named “Mary” from 1880-2014. On the same plot, we will add/overlay a plot of the proportion of female babies named “Sophia” from 1880-2014.
+```{r}
+# Combine the two data sets together
+babyNamesCombined <- rbind(babyNamesMary,
+                           babyNamesSophia)
+
+# Create overlay histogram
+babyNamesCombined %>%
+  ggplot(aes(x = year,
+             y = prop,
+             color = name)) +
+  geom_line(alpha = 0.7) +
+  labs(title = "Popular Female Names Over the Years",
+       caption = "Eric Warren",
+       x = "Year",
+       y = "Proportion of Name Being Used",
+       color = "Baby Name") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+#### Part D
+
+As we can see from our time series graph, we can see that the name **Mary** has had a trend of decreasing popularity over time. Between 1910-1920 there was an uptick in popularity again, but the proportion of the name being used has decreased. On the reverse, the name Sophia has been relatively flat in its popularity use, but over the last 40 years, the name **Sophia** has increased at an exponential rate. It seems towards the end of the 2000s decade, the name has topped off and might have gone down a bit. In conclusion, a once popular name of **Mary** has decreased its popularity over time and is now less popular than its counterpart name of **Sophia** that was not very popular but has now started to grow in this realm.
+
+### Problem 2 {.tabset}
+
+#### Read in the data
+
+Here we are going to construct the data we are going to use for our regression analysis.
+```{r}
+set.seed(9)
+n = 100
+x1 = rnorm(n)
+x2 = x1 + rnorm(n)
+x3 = rnorm(n)
+z1 = rnorm(n)
+z2 = rnorm(n)
+
+# true model for response variable y
+b0 = 1
+b1 = 0.3
+b2 = 0.4
+c1 = 0.5
+c2 = -0.5
+y = b0+b1*x1+b2*x2+c1*z1+c2*z2
+```
+
+#### Part A {.tabset}
+
+##### Section i
+
+Here we are going to make a linear regression model of y onto x1.
+```{r}
+lmOnX1 <- lm(y ~ x1)
+summary(lmOnX1)
+```
+
+1. It has an adjusted *R^2^* value of `r summary(lmOnX1)$adj.r.squared`, which shows that `r summary(lmOnX1)$adj.r.squared * 100`% of the model can be explained by the data of x1. That means that error makes up `r 100 - (summary(lmOnX1)$adj.r.squared * 100)`% of the model, which shows there can be a lot of variation.
+
+2. This model does not do the best job of matching coefficients. The intercept of this model is `r lmOnX1$coefficients[[1]]`, which is really close to the true intercept of 1; oppositely, the x1 coefficient value is not very close as it should be 0.3 but we get `r lmOnX1$coefficients[[2]]`, which shows that this model is not a very good predictor of x1.
+
+3. This model does not show the overall dependence of the two other variables very well, since we have nothing for x2 and x3. We know the error (which includes x2 and x3 in this model) has a strong relationship on the model, but we do not know how much.
+
+##### Section ii
+
+Here we are going to make a linear regression model of y onto x2.
+```{r}
+lmOnX2 <- lm(y ~ x2)
+summary(lmOnX2)
+```
+
+1. It has an adjusted *R^2^* value of `r summary(lmOnX2)$adj.r.squared`, which shows that `r summary(lmOnX2)$adj.r.squared * 100`% of the model can be explained by the data of x2. That means that error makes up `r 100 - (summary(lmOnX2)$adj.r.squared * 100)`% of the model, which shows there can be a lot of variation.
+
+2. This model does not do the best job of matching coefficients. The intercept of this model is `r lmOnX2$coefficients[[1]]`, which is fairly close to the true intercept of 1; oppositely, the x2 coefficient value is not very close as it should be 0.4 but we get `r lmOnX2$coefficients[[2]]`, which shows that this model is not a very good predictor of x2. This model does do a better job than when predicting for x1.
+
+3. This model does not show the overall dependence of the two other variables very well, since we have nothing for x1 and x3. We know the error (which includes x1 and x3 in this model) has a fairly strong relationship on the model, but we do not know how much impact each individual predictor has on it.
+
+##### Section iii
+
+Here we are going to make a linear regression model of y onto x3.
+```{r}
+lmOnX3 <- lm(y ~ x3)
+summary(lmOnX3)
+```
+
+1. It has an adjusted *R^2^* value of `r summary(lmOnX3)$adj.r.squared`, which shows that `r summary(lmOnX3)$adj.r.squared * 100`% of the model can be explained by the data of x3. That means that error makes up `r 100 - (summary(lmOnX3)$adj.r.squared * 100)`% of the model, which shows the model is simply just total variation (or error) between points, and that this model is just picking and randomly guessing points.
+
+2. This model does a fairly good job of matching coefficients, especially with using just one predictor. The intercept of this model is `r lmOnX3$coefficients[[1]]`, which is pretty close to the true intercept of 1; oppositely, the x3 coefficient value is not too far from what it should be of a value of 0 and we get `r lmOnX3$coefficients[[2]]`, which shows that this model is not a bad predictor of x3. This model does a better job than when predicting for x1 and x2 by itself.
+
+3. This model does not show the overall dependence of the two other variables very well, since we have nothing for x1 and x2. We know the error (which includes x1 and x2 in this model) basically makes up the model, but we do not know how much impact each individual predictor has on it.
+
+#### Part B
+
+Here we are going to make a linear regression model of y onto x1 and x2.
+```{r}
+lmOnX1AndX2 <- lm(y ~ x1 + x2)
+summary(lmOnX1AndX2)
+```
+
+1. It has an adjusted *R^2^* value of `r summary(lmOnX1AndX2)$adj.r.squared`, which shows that `r summary(lmOnX1AndX2)$adj.r.squared * 100`% of the model can be explained by the data of x1 and x2. That means that error makes up `r 100 - (summary(lmOnX1AndX2)$adj.r.squared * 100)`% of the model, which shows the model is simply just total variation (or error) between points, and that this model is just picking and randomly guessing points.
+
+2. This model does a fairly good job of matching coefficients, especially with using just one predictor. The intercept of this model is `r lmOnX1AndX2$coefficients[[1]]`, which is pretty close to the true intercept of 1; oppositely, the x1 and x2 coefficient values are not too far from what it should be of a value of 0.3 for x1 and we get `r lmOnX1AndX2$coefficients[[2]]`, which is fairly close. For x2 we should get 0.4 but we actually get `r lmOnX1AndX2$coefficients[[3]]`, which is also very close. This shows that this model is not a bad predictor of x1 and x2 and does a better job than when predicting for x1 and x2 than when they are by itself.
+
+3. This model does an okay job showing the overall dependence that x1 and x2 have on the other variable of x3, since x3 should be zero but we have nothing for x3 and could be lumped with the error in this model. We know the error, but we might not know how much impact the x3 predictor has on the other two. Due to x3 being zero, x3 should not affect the model so this issue is fine and we could use this model if needed for this reason.
+
+#### Part C
+
+Here we are going to make a linear regression model of y onto x1, x2., and x3.
+```{r}
+lmOnX1X2AndX3 <- lm(y ~ x1 + x2 + x3)
+summary(lmOnX1X2AndX3)
+```
+
+1. It has an adjusted *R^2^* value of `r summary(lmOnX1X2AndX3)$adj.r.squared`, which shows that `r summary(lmOnX1X2AndX3)$adj.r.squared * 100`% of the model can be explained by the data of x1, x2, x3. That means that error makes up `r 100 - (summary(lmOnX1X2AndX3)$adj.r.squared * 100)`% of the model, which shows the model is simply just total variation (or error) between points, and that this model is just picking and randomly guessing points.
+
+2. This model does a fairly good job of matching coefficients, especially with using just one predictor. The intercept of this model is `r lmOnX1X2AndX3$coefficients[[1]]`, which is pretty close to the true intercept of 1; oppositely, the x1, x2, and x3 coefficient values are not too far from what it should be. For x1 we should get a value of 0.3 and we get `r lmOnX1X2AndX3$coefficients[[2]]`, which is fairly close. For x2 we should get 0.4 but we actually get `r lmOnX1X2AndX3$coefficients[[3]]`, which is also very close. For x3 we should get 0 but we actually get `r lmOnX1X2AndX3$coefficients[[4]]`, which is very close. This shows that this model is not a bad predictor of x1, x2, and x3 and does a better job than when predicting for x1, x2, and x3 than when they are by itself.
+
+3. This model does show the overall dependence that x1, x2, and x3 have on each other, since we can see all three variables in a model and how they interact. We also know the error, so we can when all three are together how far off they are from the true model. The reason there is still a difference is because the z variables are not included.
+
+#### Part D
+
+Saying which model is the best is a tough thing to say. Usually in linear regression, we like to look at which model has the lowest error value. In this case we can compare the following models to see what those are.
+```{r}
+`Regression Models` <- c("x1", "x2", "x3", "x1 and x2", "x1, x2, and x3")
+`Regression Errors` <- c(summary(lmOnX1)$sigma,
+                        summary(lmOnX2)$sigma,
+                        summary(lmOnX3)$sigma,
+                        summary(lmOnX1AndX2)$sigma,
+                        summary(lmOnX1X2AndX3)$sigma)
+regressionErrorTable <- as_tibble(cbind(`Regression Models`, `Regression Errors`))
+regressionErrorTable$`Regression Errors` <- as.numeric(regressionErrorTable$`Regression Errors`)
+knitr::kable(regressionErrorTable, "pipe")
+minError <- regressionErrorTable[which.min(regressionErrorTable$`Regression Errors`), ] %>%
+  rename(model = `Regression Models`)
+```
+
+If we looked at which model had the lowest residual error, we would select the `r minError$model`. If we also looked at all of the summaries of the models from before, we could see that the the x1 and x2 and the x1, x2, and x3 models both did a great job showing how y should look. Since the adjusted *R^2^* values are very close and the error is lower for the `r minError$model`, I think it is best to go with the `r minError$model` since we usually want to models with the lowest errors. On top of that, we also want to pick models with the least amount of predictors that best show the predicted values. Since x3 is zero, x1 and x2 should do a great enough job of doing this.
+
+### Problem 3 {.tabset}
+
+#### Part A
+
+Here we are going to load the anscombe data set and fit the 4 linear regression models.
+```{r}
+anscombe <- as_tibble(anscombe)
+lmAnscombe1 <- lm(y1 ~ x1, anscombe)
+lmAnscombe2 <- lm(y2 ~ x2, anscombe)
+lmAnscombe3 <- lm(y3 ~ x3, anscombe)
+lmAnscombe4 <- lm(y4 ~ x4, anscombe)
+```
+
+1. For the first anscombe regression line, the equation is y1 = `r lmAnscombe1$coefficients[[1]]` + `r lmAnscombe1$coefficients[[2]]` * x1.
+
+2. For the second anscombe regression line, the equation is y2 = `r lmAnscombe2$coefficients[[1]]` + `r lmAnscombe2$coefficients[[2]]` * x2.
+
+3. For the third anscombe regression line, the equation is y3 = `r lmAnscombe3$coefficients[[1]]` + `r lmAnscombe3$coefficients[[2]]` * x3.
+
+4. For the fourth anscombe regression line, the equation is y4 = `r lmAnscombe4$coefficients[[1]]` + `r lmAnscombe4$coefficients[[2]]` * x4.
+
+#### Part B
+
+Here we are going to fit the 4 plots of the anscombe to see the difference between them.
+```{r}
+anscombe %>%
+  ggplot(aes(x = x1,
+             y = y1)) +
+  geom_point(alpha = 0.3,
+             color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Linear Regression Line for the First Anscombe Equation",
+       caption = "Eric Warren",
+       x = "x1",
+       y = "y1") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+anscombe %>%
+  ggplot(aes(x = x2,
+             y = y2)) +
+  geom_point(alpha = 0.3,
+             color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Linear Regression Line for the Second Anscombe Equation",
+       caption = "Eric Warren",
+       x = "x2",
+       y = "y2") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+anscombe %>%
+  ggplot(aes(x = x3,
+             y = y3)) +
+  geom_point(alpha = 0.3,
+             color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Linear Regression Line for the Third Anscombe Equation",
+       caption = "Eric Warren",
+       x = "x3",
+       y = "y3") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+anscombe %>%
+  ggplot(aes(x = x4,
+             y = y4)) +
+  geom_point(alpha = 0.3,
+             color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Linear Regression Line for the Fourth Anscombe Equation",
+       caption = "Eric Warren",
+       x = "x4",
+       y = "y4") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+#### Part C
+
+1. For the first equation, it looks like there is no pattern and the line seems to fit the points, and the data looks like it could use a linear regression model.
+
+2. For the second equation, it looks like there is a pattern of a quadratic equation and the line seems to not fit the points. Thus, the data looks like it could not use a linear regression model.
+
+3. For the third equation, it looks like there is no pattern and the line seems to fit the points. There is one outlier completely changing the line though, so removing this outlier for analysis would make this model much ore accurate if the prediction method is linear regression. Thus, the data looks like it could use a linear regression model, but we should proceed with caution if using this modeling technique.
+
+4. For the fourth equation, it looks like there is a pattern of all of the points but one being on the same axis and the line seems to not fit the points other than the median point on x4 axis value of 8 and the point at the x4 value of 19. Thus, the data looks like it could not use a linear regression model.
+
+#### Part D
+
+Here we are going to look at the diagnostics for each anscombe model and see if linear regression is appropriate.
+```{r}
+# First plot
+par(mfrow = c(2, 2))
+plot(lmAnscombe1, 
+     main = "First Plot")
+# Second plot
+par(mfrow = c(2, 2))
+plot(lmAnscombe2,
+     main = "Second Plot")
+# Third plot
+par(mfrow = c(2, 2))
+plot(lmAnscombe3,
+     main = "Third Plot")
+# Fourth plot
+par(mfrow = c(2, 2))
+plot(lmAnscombe4,
+     main = "Fourth Plot")
+```
+
+Looking at the diagnostics plot, we can see:
+
+1. For the first plot, it seems to look that it could use a linear regression model, but we should proceed with caution because normality might be violated due to the QQ-Plot. This could be because of the limited data, but it is the best of the 4 models made to look like a linear regression model.
+
+2. For the second plot, it seems to look like a quadratic model. The normality assumption is definitely violated from the residual plot and the QQ-Plot does not look normal either.
+
+3. For the third plot, it seems to look like a linear model, but the outlier is really throwing the data off. The normality assumption is most likely violated from the residual plot showing a distinct pattern, even though the QQ-Plot looks fairly normal.
+
+4. For the fourth plot, it seems to look like a vertical line with one additional point. The normality assumption is definitely violated from the residual plot due to heteroskedasticity being present even though the QQ-Plot is not too far off normal.
+
+### Problem 4 {.tabset}
+
+#### Part A
+
+Here we are going to plot the Petal Length (x-axis) vs Petal Width (y-axis) and then briefly describe the relation between petal length and petal width as I observe from the plot.
+```{r}
+iris <- as_tibble(iris)
+iris %>%
+  ggplot(aes(x = Petal.Length,
+             y = Petal.Width)) +
+  geom_point(alpha = 0.3,
+              color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Petal Length Versus Petal Width of an Iris Plant",
+       caption = "Eric Warren",
+       x = "Petal Length (in cm)",
+       y = "Petal Width (in cm)") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+For this plot we can see that there are points groups together but it seems to have a linear relationship between petal length and petal width. There could be a pattern present by different species of iris, but the data seems to be fairly normal just by looking at it.
+
+#### Part B
+
+Here we are going to plot the Petal Length (x-axis) vs Petal Width (y-axis) with different colors for the different species and then briefly describe the relation between petal length and petal width as I observe from the plot.
+```{r}
+iris %>%
+  ggplot(aes(x = Petal.Length,
+             y = Petal.Width,
+             color = Species)) +
+  geom_point(alpha = 0.3,
+              aes(color = Species)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              aes(color = Species)) +
+  labs(title = "Petal Length Versus Petal Width \nof an Iris Plant by Species",
+       caption = "Eric Warren",
+       x = "Petal Length (in cm)",
+       y = "Petal Width (in cm)",
+       color = "Species") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+For this plot we can see that there are points grouped together by the species type but it seems to have a linear relationship between petal length and petal width for each of the species. The setosa species seems very different in petal length and width, as it is much smaller. The versicolor and virginica iris seem to be fairly similar, but the virginica seems to have a bigger width and a slightly bigger length compared to the versicolor iris.
+
+#### Part C
+
+Here we are going to plot the Sepal Length (x-axis) vs Sepal Width (y-axis) with different colors for the different species and then briefly describe the relation between petal length and petal width as I observe from the plot.
+```{r}
+iris %>%
+  ggplot(aes(x = Sepal.Length,
+             y = Sepal.Width,
+             color = Species)) +
+  geom_point(alpha = 0.3,
+              aes(color = Species)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              aes(color = Species)) +
+  labs(title = "Sepal Length Versus Sepal Width \nof an Iris Plant by Species",
+       caption = "Eric Warren",
+       x = "Sepal Length (in cm)",
+       y = "Sepal Width (in cm)",
+       color = "Species") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+For this plot we can see that there are points grouped together by the species type but there are only two distinct groups rather than three. There also seems to be a linear relationship between sepal length and sepal width for only one of the species, as the other two have a more flat line. The setosa species seems very different in sepal length and width, as it is much smaller in length and larger in width. The versicolor and virginica iris seem to be fairly similar, as the linear regression lines overlap with each other. Looking at the sepal dimensions is very difficult to distinguish the species of the iris.
+
+#### Part D
+
+Since there seems to be three different groups in the petal dimensions and the sepal dimensions seem to only have two different groups (despite having three species), I would use the petal length and petal widths to help distinguish which species of the iris each flower is. Even though both are not entirely accurate the petal dimensions is more accurate in determining what species of iris each flower is and shows the three distinct groups for each of the three different species.
