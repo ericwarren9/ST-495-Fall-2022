@@ -582,11 +582,12 @@ summary(lmOnX3)</code></pre>
 ## F-statistic: 0.263 on 1 and 98 DF,  p-value: 0.6092</code></pre>
 <ol style="list-style-type: decimal">
 <li><p>It has an adjusted <em>R<sup>2</sup></em> value of -0.0074999,
-which shows that -0.7499948% of the model can be explained by the data
-of x3. That means that error makes up 100.7499948% of the model, which
-shows the model is simply just total variation (or error) between
-points, and that this model is just picking and randomly guessing
-points.</p></li>
+which shows that 0% of the model can be explained by the data of x3.
+That means that error makes up 100% of the model, which shows the model
+is simply just total variation (or error) between points, and that this
+model is just picking and randomly guessing points. This makes sense
+since x3 is supposed to be zero, which means it should just be error
+making up the model.</p></li>
 <li><p>This model does a fairly good job of matching coefficients,
 especially with using just one predictor. The intercept of this model is
 0.979177, which is pretty close to the true intercept of 1; oppositely,
@@ -782,6 +783,8 @@ lmAnscombe4 &lt;- lm(y4 ~ x4, anscombe)</code></pre>
 <li><p>For the fourth anscombe regression line, the equation is y4 =
 3.0017273 + 0.4999091 * x4.</p></li>
 </ol>
+<p>As we can see all the equations are basically the exact same
+thing.</p>
 </div>
 <div id="part-b-2" class="section level4">
 <h4>Part B</h4>
