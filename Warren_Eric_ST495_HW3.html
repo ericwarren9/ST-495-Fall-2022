@@ -11,7 +11,7 @@
 
 <meta name="author" content="Eric Warren" />
 
-<meta name="date" content="2022-09-12" />
+<meta name="date" content="2022-09-14" />
 
 <title>ST 495 HW3</title>
 
@@ -365,7 +365,7 @@ pre code {
 
 <h1 class="title toc-ignore">ST 495 HW3</h1>
 <h4 class="author">Eric Warren</h4>
-<h4 class="date">2022-09-12</h4>
+<h4 class="date">2022-09-14</h4>
 
 </div>
 
@@ -760,6 +760,49 @@ since we usually want to models with the lowest errors. On top of that,
 we also want to pick models with the least amount of predictors that
 best show the predicted values. Since x3 is zero, x1 and x2 should do a
 great enough job of doing this.</p>
+<p>To double check to see if x1 and x2 is the best model, we are going
+to check with AIC.</p>
+<pre class="r"><code>library(MASS)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;MASS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     select</code></pre>
+<pre class="r"><code>lmOnIntercept &lt;- lm(y ~ 1)
+modelTesting &lt;- stepAIC(lmOnIntercept, 
+                        scope = list(lower = lmOnIntercept,
+                                     upper = lmOnX1X2AndX3),
+                        direction = &quot;both&quot;)</code></pre>
+<pre><code>## Start:  AIC=30.54
+## y ~ 1
+## 
+##        Df Sum of Sq     RSS     AIC
+## + x2    1    79.259  53.768 -58.049
+## + x1    1    65.129  67.899 -34.716
+## &lt;none&gt;              133.027  30.538
+## + x3    1     0.356 132.671  32.270
+## 
+## Step:  AIC=-58.05
+## y ~ x2
+## 
+##        Df Sum of Sq     RSS     AIC
+## + x1    1     6.688  47.080 -69.333
+## &lt;none&gt;               53.768 -58.049
+## + x3    1     0.238  53.530 -56.493
+## - x2    1    79.259 133.027  30.538
+## 
+## Step:  AIC=-69.33
+## y ~ x2 + x1
+## 
+##        Df Sum of Sq    RSS     AIC
+## &lt;none&gt;              47.080 -69.333
+## + x3    1    0.0965 46.983 -67.538
+## - x1    1    6.6881 53.768 -58.049
+## - x2    1   20.8187 67.899 -34.716</code></pre>
+<p>By double checking through AIC, we can see that the best model is in
+fact x1 and x2, since it has the lowest AIC. When using additional
+analysis, we will be using x1 and x2 on the value we are predicting of
+y.</p>
 </div>
 </div>
 <div id="problem-3" class="section level3 tabset">
