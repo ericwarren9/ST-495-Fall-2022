@@ -193,6 +193,18 @@ minError <- regressionErrorTable[which.min(regressionErrorTable$`Regression Erro
 
 If we looked at which model had the lowest residual error, we would select the `r minError$model`. If we also looked at all of the summaries of the models from before, we could see that the the x1 and x2 and the x1, x2, and x3 models both did a great job showing how y should look. Since the adjusted *R^2^* values are very close and the error is lower for the `r minError$model`, I think it is best to go with the `r minError$model` since we usually want to models with the lowest errors. On top of that, we also want to pick models with the least amount of predictors that best show the predicted values. Since x3 is zero, x1 and x2 should do a great enough job of doing this.
 
+To double check to see if `r minError$model` is the best model, we are going to check with AIC.
+```{r}
+library(MASS)
+lmOnIntercept <- lm(y ~ 1)
+modelTesting <- stepAIC(lmOnIntercept, 
+                        scope = list(lower = lmOnIntercept,
+                                     upper = lmOnX1X2AndX3),
+                        direction = "both")
+```
+
+By double checking through AIC, we can see that the best model is in fact `r minError$model`, since it has the lowest AIC. When using additional analysis, we will be using `r minError$model` on the value we are predicting of y.
+
 ### Problem 3 {.tabset}
 
 #### Part A
