@@ -1,0 +1,756 @@
+---
+title: "ST 495 HW4"
+author: "Eric Warren"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      fig.height = 7,
+                      fig.width = 10)
+```
+
+## Honor Code {.tabset}
+
+I have neither given nor received unauthorized assistance on this test or assignment. -**Eric Warren**
+
+### Problem 1 {.tabset}
+
+#### Read in the data
+
+Here we are going to read in the mtcars data set
+```{r}
+library(tidyverse)
+mtcars <- as_tibble(mtcars)
+```
+
+#### Part A
+
+Here we are going to compute the correlation coefficient between mpg and all other features in the data set and then find the two features most strongly correlated with mpg.
+```{r}
+corCars <- as_tibble(cor(mtcars$mpg, mtcars[ ,c(-1)])) %>%
+  gather(variable, correlation)
+corCars # Print the correlation dataframe
+```
+
+
+As we can see, there are some variables that correlate with mpg more than others. Here we are going to examine what the top 2 most correlated ones are.
+```{r}
+corCars$absCorrelation <- abs(corCars$correlation)
+corCarsTop2 <- corCars %>%
+  arrange(desc(absCorrelation)) %>%
+  slice(1:2) %>%
+  dplyr::select(-absCorrelation)
+```
+
+We can see that two highest predictor variables that correlate with mpg are `r corCarsTop2$variable[1]` and `r corCarsTop2$variable[2]` with correlations of `r corCarsTop2$correlation[1]` and `r corCarsTop2$correlation[2]` respectively.
+
+#### Part B
+
+Here we are going to fit two simple linear regression models based on the top two variables we got for highest correlation. Model 1 will using the strongest feature (`r corCarsTop2$variable[1]`) and model 2 using the second strongest feature (`r corCarsTop2$variable[2]`).
+```{r}
+carsModel1 <- lm(mpg ~ wt, mtcars)
+summary(carsModel1)
+carsModel2 <- lm(mpg ~ cyl, mtcars)
+summary(carsModel2)
+```
+
+Model 1 (which is looking at the affect weight has on mpg) has an adjusted *R^2^* value of `r summary(carsModel1)$adj.r.squared`, which shows that `r summary(carsModel1)$adj.r.squared * 100`% of the model can be explained by the data of car weight. It also has a residual standard error of `r summary(carsModel1)$sigma`.
+
+Model 2 (which is looking at the affect the number of cylinders has on mpg) has an adjusted *R^2^* value of `r summary(carsModel2)$adj.r.squared`, which shows that `r summary(carsModel2)$adj.r.squared * 100`% of the model can be explained by the data of the number of cylinders in a car. It also has a residual standard error of `r summary(carsModel2)$sigma`.
+
+In determining better linear regression models, we want to find what has the higher adjusted *R^2^* value and a lower residual standard error. Since Model 1 has a higher adjusted *R^2^* value and a lower residual standard error, this model of looking at the car weight's affect on the mpg is an overall better model.
+
+#### Part C
+
+Here we are going to fit a multiple linear regression model with all features. We are going to find which features are significant and what is the value of *R^2^*.
+```{r}
+allCarsModel <- lm(mpg ~ ., mtcars)
+summary(allCarsModel)
+```
+
+In this model, we can see that only one of the features are significant (and that is only when alpha is evaluated at 0.10) and this feature is the weight of the car (wt). This variable was also the most correlated with mpg of a car. If we look at alpha at a 0.05 level, then none of the predictor variables are significant. The adjusted *R^2^* value is `r summary(allCarsModel)$adj.r.squared`, which shows that `r summary(allCarsModel)$adj.r.squared * 100`% of the model can be explained by the predictor variables we are given.
+
+#### Part D
+
+Here we are going to identify the best subset of features. by fitting a multiple linear regression model using the best subset of features. Write down the regression formula and *R^2^* for this model. Are any of the features from (a) included in this model? Do they have the same coefficients as they had in model 1 or model 2 from (b)? If the coefficient values have changed, explain why.
+```{r}
+library(MASS)
+noCarsModel <- lm(mpg ~ 1, mtcars)
+
+modelTesting <- stepAIC(noCarsModel, 
+                        scope = list(lower = noCarsModel,
+                                     upper = allCarsModel),
+                        direction = "both")
+
+bestCarsModel <- lm(formula(modelTesting), mtcars)
+summary(bestCarsModel)
+```
+
+The equation for the best model for predicting mpg is the estimated mpg = `r bestCarsModel$coefficients[[1]]` + `r bestCarsModel$coefficients[[2]]` * `r rownames(coef(summary(bestCarsModel)))[[2]]` + `r bestCarsModel$coefficients[[3]]` * `r rownames(coef(summary(bestCarsModel)))[[3]]` + `r bestCarsModel$coefficients[[4]]` * `r rownames(coef(summary(bestCarsModel)))[[4]]`. The adjusted *R^2^* value is `r summary(bestCarsModel)$adj.r.squared`, which shows that `r summary(bestCarsModel)$adj.r.squared * 100`% of the model can be explained by the predictor variables -- which are `r rownames(coef(summary(bestCarsModel)))[c(2, 3, 4)]` -- that we are given.
+
+As we can see there is a difference in the coefficient values for wt and cyl in both types of models. When modeled individually, we can see that both predictors have a higher weight (or leading coefficient value) than when it is modeled as one multiple linear regression model. We can see a table below of the difference for both the wt and cyl predictor variables as to how it changes as a simple and multiple linear model.
+```{r}
+`Variable Names` <- c("wt", "cyl")
+`Simple Linear Coefficient Values` <- c(carsModel1$coefficients[2], carsModel2$coefficients[2])
+`Multiple Linear Coefficient Values` <- bestCarsModel$coefficients[c(2, 3)]
+coefficientTable <- as_tibble(cbind(`Variable Names`, `Simple Linear Coefficient Values`, `Multiple Linear Coefficient Values`))
+knitr::kable(coefficientTable, "pipe")
+```
+
+The table emphasizes that the coefficient values have gotten a lot smaller. This is because adding more variables to a model will decrease the chance of mistakenly attributing an effect of a variable. By not omitting variables, we should get closer to the true effect a variable has on one another, which is why multiple linear regression will tend to have a lower coefficient value than simple linear regression.
+
+### Problem 2 {.tabset}
+
+#### Read in the data
+
+We are going to use a model that looks like this:
+
+$$ Predicted salary = 50 + 20 * GPA + 0.07 * IQ + 35 * Education Level + 0.01 * (GPA * IQ) - 10 * (GPA * Eductation Level) $$
+
+#### Part A
+
+If we know that IQ and GPA are fixed then we can rewrite a regression equation to only evaluate the difference on projected salary based on education level. So now it is:
+
+$$ Predicted Difference in Salary = 35 * Education Level - 10 * (GPA * Education Level) $$
+
+Furthermore, we can look at both the high school and college salaries individually if the GPA and IQ are fixed.
+
+$$ Projected Difference College Salary = 35 - 10 * GPA $$
+$$ Projected Difference High School Salary = 0 $$
+
+So thus, we can see that by setting the equations to equal to each other to see who might make more:
+
+$$ 35 - 10 * GPA = 0 $$ or $$ GPA = 3.5 $$
+
+From this, we can see that if GPA is higher than a 3.5, then the high school graduate will make more money, on average, and if less than 3.5 GPA then the college graduate makes more, on average. So based on this, we can see that answer choice (iii) is correct in saying: "For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates provided that the GPA is high enough."
+
+#### Part B
+
+Here we are going to predict the salary of a college graduate with IQ of 110 and a GPA of 4.0. 
+```{r}
+50 + 20 * 4.0 + 0.07 * 110 + 35 * 1 + 0.01 * (4.0 * 110) - 10 * (4.0 * 1) # Note this is in thousands of dollars
+```
+
+We can see by using the regression equation and plugging in the appropriate values it is asking about that someone with a 4.0 GPA with a 110 IQ score from college will make, on average (or predicted), `r scales::dollar((50 + 20 * 4.0 + 0.07 * 110 + 35 * 1 + 0.01 * (4.0 * 110) - 10 * (4.0 * 1)) * 1000, 2)`.
+
+#### Part C
+
+*Question:* True or false: Since the coefficient for the GPA/IQ interaction
+term is very small, there is very little evidence of an interaction
+effect. Justify your answer.
+
+*Answer :* This statement is false, because the value of the coefficient for a term does not provide evidence for or against the effect it has on the regression model. We would need to compute the p-value for the coefficient to determine this.
+
+### Problem 3 {.tabset}
+
+#### Read in the data
+
+Here we are going to read in and use the Auto data.
+```{r}
+library(ISLR)
+Auto <- as_tibble(Auto)
+```
+
+#### Problem 8 in book {.tabset}
+
+##### Part A
+
+Here we are going to use  the lm() function to perform a simple linear regression with mpg as the response and horsepower as the predictor. Use the summary() function to print the results. 
+```{r}
+mpg2hp <- lm(mpg ~ horsepower, Auto)
+summary(mpg2hp)
+```
+
+1. We can see that there is a relationship between mpg and horsepower, since the p-value is `r summary(mpg2hp)$coefficients[,"Pr(>|t|)"][[2]]` which is much less than any alpha level we could use. Thus, there is a relationship present since there is statistically significant evidence that the coefficient value is not 0.
+
+2. We can see that the correlation between mpg and horsepower is `r cor(Auto$horsepower, Auto$mpg)`. This is a fairly strong, negative relationship.
+
+3. Since the coefficient of horsepower in the model is negative and the correlation is also negative, we can conclude that the relationship between horsepower and mpg is negative or as horsepower increases, mpg is predicted to decrease.
+
+4. Here we can see what predicted values of mpg are if horsepower is 98.
+```{r}
+fittedValue <- mpg2hp$coefficients[[1]] + mpg2hp$coefficients[[2]] * 98 # Predicted mpg
+
+confidenceValue <- predict(mpg2hp,
+                           tibble(horsepower = 98),
+                           level = 0.95,
+                           interval = "confidence") # 95% confidence level
+
+predictionValues <- predict(mpg2hp,
+                            tibble(horsepower = 98),
+                            level = 0.95,
+                            interval = "prediction") # 95% prediction level
+```
+
+Here we can see that the projected or fitted value that we would expect a 98 horsepower car to get is `r round(fittedValue, 2)`. We would also make a 95% confidence interval or be 95% confident that, on average, cars with 98 horsepower would get between `r round(confidenceValue[[2]], 2)` and `r round(confidenceValue[[3]], 2)` mpg. If we had to predict on what one car with 98 horsepower, we would expect that this car would get between `r round(predictionValues[[2]], 2)` and `r round(predictionValues[[3]], 2)` mpg.
+
+##### Part B
+
+Here we are going to plot the relationship between horsepower and mpg.
+```{r}
+Auto %>%
+  ggplot(aes(x = horsepower,
+             y = mpg)) +
+  geom_point(alpha = 0.3,
+             color = "blue") +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              color = "red") +
+  labs(title = "Relationship Between Horsepower and MPG",
+       caption = "Eric Warren",
+       x = "Horsepower",
+       y = "MPG") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+From this plot, it looks like an exponential decay relationship, but we will examine this on the next part.
+
+##### Part C
+
+We are going to plot the diagnostics to see if this passes all the assumptions of linear regression.
+```{r}
+par(mfrow = c(2, 2))
+plot(mpg2hp, 
+     main = "Diagnostics Plots for the Horsepower and MPG Relationship")
+```
+
+The residuals do not follow homoskedasticity, as we can see a pattern in the residuals. Due to this, the assumption of normality is violated. This supports my point in part B that thought this was not a linear representation of the data.
+
+#### Problem 9 in book {.tabset}
+
+##### Part A
+
+Here we are going to make a scatterplot matrix of all the variables in the data set.
+```{r}
+pairs(Auto,
+      main = "Scatterplot Matrix between all the Variables in Auto Data")
+```
+
+##### Part B
+
+Here we are going to get the correlations of all the variables of the Auto data set.
+```{r}
+cor(Auto[ , unlist(lapply(Auto, is.numeric))])
+```
+
+We can see that the weight, horsepower, displacement, and cylinders have a strong relationship on mpg.
+
+##### Part C
+
+Here we are going to make a multiple linear regression model of all the numeric predictor variables.
+```{r}
+mpg2numericAll <- lm(mpg ~ . - name, Auto)
+summary(mpg2numericAll)
+```
+
+1. There is a relationship between the predictors and the response as we could have guessed. We can see that the coefficient values are not zero and there are p-values less than 0.05.
+
+2. The variables that have a significant significant relationship at an alpha level of 0.05 are displacement, weight, year, and origin.
+
+3. The coefficient of **year** tells us that for every year newer or later the model of the car is, we are expecting to get about `r round(mpg2numericAll$coefficients[[7]], 2)` mpg more.
+
+##### Part D
+
+We are going to make a diagnostics plot of the multiple linear regression plot.
+```{r}
+par(mfrow = c(2, 2))
+plot(mpg2hp, 
+     main = "Diagnostics Plots for MPG's Relationship \nOn Numeric Variables")
+```
+
+It seems that the residuals might have a pattern with a quadratic curve. The residuals show that there are some outliers in the newer cars. There are also some cars with some abnormally high leverage, like observation 116.
+
+##### Part E
+
+Here we are going to make a new multiple linear regression model with all the interaction terms the are numeric.
+```{r}
+mpg2numericAllWithInteraction <- lm(mpg ~ (. - name) ^ 2, Auto)
+summary(mpg2numericAllWithInteraction)
+```
+
+We can see that using an alpha level of 0.05, there are some interaction terms that are statistically significant in the model. The interaction terms are:
+
+- Displacement and Year
+- Acceleration and Year
+- Acceleration and Origin
+
+##### Part F {.tabset}
+
+Here we are going to try some different transformations to see how they look. Note these are without the interaction terms.
+
+###### Log Transformation of Predictors
+
+Here we are going to examine how taking the log of the predictors look. 
+```{r}
+AutoLog <- Auto %>%
+  mutate_at(2:8, list(log = ~ log(.))) %>%
+  dplyr::select(mpg,
+                name,
+                contains("log"))
+mpg2numericAllLog <- lm(mpg ~ . - name, AutoLog)
+summary(mpg2numericAllLog)
+par(mfrow = c(2, 2))
+plot(mpg2numericAllLog, 
+     main = "Diagnostics Plots for MPG's Relationship \nOn Numeric Variables in Log Form")
+```
+
+Doing the log transformations on the predictor variables tends to look better in terms of normality. It also seems to pass most of the other assumptions of linear regression and might be a better model to use when predicting the mpg of a car. Also note that taking the log of cylinders and log of displacement shows these variables aren't the best at predicting mpg.
+
+###### Squaring the Predictors
+
+Here we are going to examine how taking the squared values of the predictors look.
+```{r}
+AutoSquared <- Auto %>%
+  mutate_at(2:8, list(squared = ~ (.)**2)) %>%
+  dplyr::select(mpg,
+                name,
+                contains("squared"))
+mpg2numericAllSquared <- lm(mpg ~ . - name, AutoSquared)
+summary(mpg2numericAllSquared)
+par(mfrow = c(2, 2))
+plot(mpg2numericAllSquared, 
+     main = "Diagnostics Plots for MPG's Relationship \nOn Numeric Variables in Squared Form")
+```
+
+It looks like the normality assumption for linear regression is violated. Due to this, squaring the predictor variables does not seem to help.
+
+###### Square Rooting the Predictors
+
+Here we are going to examine how taking the square root values of the predictors look.
+```{r}
+AutoSquareRoot <- Auto %>%
+  mutate_at(2:8, list(squareRoot = ~ (.)**0.5)) %>%
+  dplyr::select(mpg,
+                name,
+                contains("squareRoot"))
+mpg2numericAllSquareRoot <- lm(mpg ~ . - name, AutoSquareRoot)
+summary(mpg2numericAllSquareRoot)
+par(mfrow = c(2, 2))
+plot(mpg2numericAllSquareRoot, 
+     main = "Diagnostics Plots for MPG's Relationship \nOn Numeric Variables in Square Root Form")
+```
+
+This does not look bad in terms of normality but there still looks to be some patterns for the residuals. This might not be a bad transformation to use, but I would prefer to use the log transformation.
+
+### Problem 4 {.tabset}
+
+#### Read in Data
+
+Here we are going to read in the Carseats data.
+```{r}
+Carseats <- as_tibble(Carseats)
+```
+
+#### Part A
+
+Here I am going to fit a multiple linear regression model using the `Price`, `Urban`, and `US` to predict `Sales`.
+```{r}
+carSalesModel <- lm(Sales ~ Price + Urban + US, Carseats)
+```
+
+#### Part B
+
+Here we are going to interpret our model.
+```{r}
+summary(carSalesModel)
+```
+
+1. Looking at the `r rownames(coef(summary(carSalesModel)))[[1]]`, we are saying that if we look at nothing else, or everything is constant, we are estimating that we will sell `r carSalesModel$coefficients[[1]]` thousands of car seats or about `r scales::comma(round(carSalesModel$coefficients[[1]] * 1000, 0))` in total.
+
+2. Looking at the `r rownames(coef(summary(carSalesModel)))[[2]]`, we are saying that if we look at nothing else, or everything is constant, we are estimating that we will have a change in sales of `r carSalesModel$coefficients[[2]]` thousands of car seats or a decrease in sales of about `r round(carSalesModel$coefficients[[2]] * -1000, 0)` in total per one dollar we increase our prices of our car seats.
+
+3. Looking at the `r rownames(coef(summary(carSalesModel)))[[3]]`, we are saying that if we look at nothing else, or everything is constant, we are estimating that we will have a change in sales of `r carSalesModel$coefficients[[3]]` thousands of car seats or a decrease in sales of about `r round(carSalesModel$coefficients[[3]] * -1000, 0)` in total if the store is Urban, compared to others that are not.
+
+4. Looking at the `r rownames(coef(summary(carSalesModel)))[[4]]`, we are saying that if we look at nothing else, or everything is constant, we are estimating that we will have a change in sales of `r carSalesModel$coefficients[[4]]` thousands of car seats or an increase in sales of about `r scales::comma(round(carSalesModel$coefficients[[4]] * 1000, 0))` in total if the store is in the US, compared to others that are not.
+
+#### Part C
+
+The equation of this regression model is the predicted sales of car seats in thousands = `r carSalesModel$coefficients[[1]]` + `r carSalesModel$coefficients[[2]]` * Price we are selling the seats + `r carSalesModel$coefficients[[3]]` * If the store is in an Urban area + `r carSalesModel$coefficients[[4]]` * If the store is in the US.
+
+*Note*: The Urban and US variables are either 0 if no or 1 if yes, since they are qualitative.
+
+#### Part D
+
+Looking back to our summary table in **Part B**, we can see that the predictor variables that are significantly significant to have an affect on the model are `Price` and `US`, since their p-values are less than 0.0001.
+
+#### Part E
+
+Now we are going to fit a new model taking out the `Urban` predictor since it was not statistically significant in helping our prediction.
+```{r}
+carSalesModelUpdated <- lm(Sales ~ Price + US, Carseats)
+```
+
+#### Part F
+
+We are going to look at the summaries of the models to see how well both of them are being fitted.
+```{r}
+summary(carSalesModel)
+summary(carSalesModelUpdated)
+```
+
+As we can see, the adjusted *R^2^* for the model with all 3 predictors is `r summary(carSalesModel)$adj.r.squared` which shows that `r summary(carSalesModel)$adj.r.squared * 100`% of the model can be explained by the predictor variables we are given. For the model that uses only US and Price as predictors, we can see that the adjusted *R^2^* is `r summary(carSalesModelUpdated)$adj.r.squared` which shows that `r summary(carSalesModelUpdated)$adj.r.squared * 100`% of the model can be explained by the predictor variables we are given. Having the model representing such a low percentage is not a good model, and thus both models fit the data quite poorly in my opinion.
+
+#### Part G
+
+Here we are going to obtain 95% confidence levels of the coefficients for each predictor.
+```{r}
+confidencePrice <- confint(carSalesModelUpdated, 
+                           "Price", 
+                           level = 0.95)
+confidenceUS <- confint(carSalesModelUpdated,
+                        "USYes",  
+                        level = 0.95)
+```
+
+1. Looking at price, we are 95% confident that the price coefficient is between `r confidencePrice[[1]]` and `r confidencePrice[[2]]` or that if we keep everything but price constant that we will lose between `r round(abs(confidencePrice[[2]]) * 1000, 0)` and `r round(abs(confidencePrice[[1]]) * 1000, 0)` car seat units being sold.
+
+2. Looking at if the store is in the US, we are 95% confident that the price coefficient is between `r confidenceUS[[1]]` and `r confidenceUS[[2]]` or that if we keep everything but the location of the store in the US constant that we will gain between `r round(abs(confidenceUS[[1]]) * 1000, 0)` and `r scales::comma(round(abs(confidenceUS[[2]]) * 1000, 0))` in car seat units being sold.
+
+#### Part H
+
+Here we are going to examine if there are any outliers or evidence of high leverage observations.
+```{r}
+par(mfrow = c(2, 2))
+plot(carSalesModelUpdated, 
+     main = "Diagnostics Plots for Car Seats Sold and \nRelationship to Price and Store Location")
+```
+
+From this, we can see that observations 69 and 377 tend to be constant outliers and the high leverage observations are 26, 50, and 368. Everything else seems to look good and the model to looks to meet all assumptions.
+
+### Problem 5 {.tabset}
+
+#### Read in Data
+
+Here we are going to read in the Boston data set.
+```{r}
+Boston <- as_tibble(Boston)
+```
+
+#### Part A
+
+There are many simple linear regression models we are going to have to make.
+
+First, look at how crime is affected by residential zones.
+```{r}
+crimeOnZone <- lm(crim ~ zn, Boston)
+summary(crimeOnZone)
+par(mfrow = c(2, 2))
+plot(crimeOnZone, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Zone")
+```
+
+Here we can see that for every percentage of land is zoned, the predicted per capita crime rate goes down by about `r round(abs(crimeOnZone$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by non-retail business.
+```{r}
+crimeOnIndus <- lm(crim ~ indus, Boston)
+summary(crimeOnIndus)
+par(mfrow = c(2, 2))
+plot(crimeOnIndus, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Industrial Zone")
+```
+
+Here we can see that for every percentage of land is non-retail, the predicted per capita crime rate goes up by about `r round(abs(crimeOnIndus$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the river.
+```{r}
+crimeOnChas <- lm(crim ~ chas, Boston)
+summary(crimeOnChas)
+par(mfrow = c(2, 2))
+plot(crimeOnChas, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and River Bank")
+```
+
+Here we can see that if it bounds the river, the predicted per capita crime rate goes down by about `r round(abs(crimeOnChas$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the nitrogen oxides.
+```{r}
+crimeOnNox <- lm(crim ~ nox, Boston)
+summary(crimeOnNox)
+par(mfrow = c(2, 2))
+plot(crimeOnNox, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Nitrogen Oxide")
+```
+
+Here we can see that for every one part the nitrogen oxides go up per 10 million parts, the predicted per capita crime rate goes up by about `r round(abs(crimeOnNox$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the number of rooms per dwelling.
+```{r}
+crimeOnRm <- lm(crim ~ rm, Boston)
+summary(crimeOnRm)
+par(mfrow = c(2, 2))
+plot(crimeOnRm, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Number of Rooms")
+```
+
+Here we can see that for every additional room in a dwelling, the predicted per capita crime rate goes down by about `r round(abs(crimeOnRm$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the proportion of units built prior to 1940.
+```{r}
+crimeOnAge <- lm(crim ~ age, Boston)
+summary(crimeOnAge)
+par(mfrow = c(2, 2))
+plot(crimeOnAge, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Building Age")
+```
+
+Here we can see that for every additional percentage of houses built before 1940, the predicted per capita crime rate goes up by about `r round(abs(crimeOnAge$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the weighted mean distance from Boston centers.
+```{r}
+crimeOnDis <- lm(crim ~ dis, Boston)
+summary(crimeOnDis)
+par(mfrow = c(2, 2))
+plot(crimeOnDis, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Mean Distance from Centers")
+```
+
+Here we can see that for every additional mile the weighted distance is from the Boston centers, the predicted per capita crime rate goes down by about `r round(abs(crimeOnDis$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the accessibility to radical highways.
+```{r}
+crimeOnRad <- lm(crim ~ rad, Boston)
+summary(crimeOnRad)
+par(mfrow = c(2, 2))
+plot(crimeOnRad, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Index of Accessibility to Radical Highways")
+```
+
+Here we can see that for every additional index point the accessibility to radical highways increases, the predicted per capita crime rate goes up by about `r round(abs(crimeOnRad$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the property tax rate.
+```{r}
+crimeOnTax <- lm(crim ~ tax, Boston)
+summary(crimeOnTax)
+par(mfrow = c(2, 2))
+plot(crimeOnTax, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Tax Rate")
+```
+
+Here we can see that for every additional dollar in property tax rate per 10,000 dollars, the predicted per capita crime rate goes up by about `r round(abs(crimeOnTax$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+
+Next, look at how crime is affected by pupil-teacher ratio by town.
+```{r}
+crimeOnPtratio <- lm(crim ~ ptratio, Boston)
+summary(crimeOnPtratio)
+par(mfrow = c(2, 2))
+plot(crimeOnPtratio, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Pupil to Teacher Ratio")
+```
+
+Here we can see that for every additional student per teacher, the predicted per capita crime rate goes up by about `r round(abs(crimeOnPtratio$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the proportion of African-Americans.
+```{r}
+crimeOnBlack <- lm(crim ~ black, Boston)
+summary(crimeOnBlack)
+par(mfrow = c(2, 2))
+plot(crimeOnBlack, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Proportion of African-Americans")
+```
+
+Here we can see that for every additional African-American proportional point, the predicted per capita crime rate goes up by about `r round(abs(crimeOnBlack$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Next, look at how crime is affected by the percentage of the lower status of population.
+```{r}
+crimeOnLstat <- lm(crim ~ lstat, Boston)
+summary(crimeOnLstat)
+par(mfrow = c(2, 2))
+plot(crimeOnLstat, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Percentage of Lower Status")
+```
+
+Here we can see that for every additional percentage of lower status of the population is in an area, the predicted per capita crime rate goes up by about `r round(abs(crimeOnLstat$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+Lastly, look at how crime is affected by the median value of owned homes in thousands of dollars.
+```{r}
+crimeOnMedv <- lm(crim ~ medv, Boston)
+summary(crimeOnMedv)
+par(mfrow = c(2, 2))
+plot(crimeOnMedv, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate and Median House Price of Owned Homes")
+```
+
+Here we can see that for every additional thosand dollars the median value of owned homes goes up, the predicted per capita crime rate goes up by about `r round(abs(crimeOnMedv$coefficients[[2]]), 4)`. This variable has an effect on crime rate. It seems that the normality assumption is violated and that doing linear regression on this variable is not a good idea.
+
+As we can see all the predictor variables when compared to themselves has a significantly significant effect on the per capita crime rate. Though, none of these variables meet all of the assumptions needed for linear regression modeling, especially the normality assumption.
+
+#### Part B
+
+Here we are going to fit a mulitple linear regression model of all the predictor variables to see how this combined model looks.
+```{r}
+crimeOnAllModel <- lm(crim ~ ., Boston)
+summary(crimeOnAllModel)
+par(mfrow = c(2, 2))
+plot(crimeOnAllModel, 
+     main = "Diagnostics Plots for Per Capita \nCrime Rate on All Predictor Variables")
+```
+
+The following variables that have significantly significant evidence to conclude that they have an affect on the model are `r rownames(coef(summary(crimeOnAllModel)))[c(2, 8, 9, 12, 14)]` at an alpha level of 0.05. We can see that many of the variables are not needed for prediction and the adjusted *R^2^* value is pretty low, which shows there is a lot of error that describes the crime rate. It also tends to follow normality alright, minus some outliers, so we might have to proceed with caution when using this model for prediction, because it doesn't look entirely normal (an assumption needed to use this model).
+
+#### Part C
+
+Here we are going to compare how all of the predictor coefficients when predicted by themselves and together as one model.
+```{r}
+`Variable Names` <- c("zn", "indus", "chas", "nox", "rm", "age", "dis", "rad", "tax", "ptratio", "black", "lstat", "medv")
+`Coefficient Values on Simple Model` <- as.numeric(
+  c(round(crimeOnZone$coefficients[[2]], 4),
+    round(crimeOnIndus$coefficients[[2]], 4),
+    round(crimeOnChas$coefficients[[2]], 4),
+    round(crimeOnNox$coefficients[[2]], 4),
+    round(crimeOnRm$coefficients[[2]], 4),
+    round(crimeOnAge$coefficients[[2]], 4),
+    round(crimeOnDis$coefficients[[2]], 4),
+    round(crimeOnRad$coefficients[[2]], 4),
+    round(crimeOnTax$coefficients[[2]], 4),
+    round(crimeOnPtratio$coefficients[[2]], 4),
+    round(crimeOnBlack$coefficients[[2]], 4),
+    round(crimeOnLstat$coefficients[[2]], 4),
+    round(crimeOnMedv$coefficients[[2]], 4)
+  )
+)
+
+`Coefficient Values on Multiple Model` <- as.numeric(unname(round(crimeOnAllModel$coefficients[c(2:14)], 4)))
+
+coefficientTableCrime <- as_tibble(cbind(`Variable Names`, `Coefficient Values on Simple Model`,`Coefficient Values on Multiple Model`))
+coefficientTableCrime$`Coefficient Values on Simple Model` <- as.numeric(coefficientTableCrime$`Coefficient Values on Simple Model`)
+coefficientTableCrime$`Coefficient Values on Multiple Model` <- as.numeric(coefficientTableCrime$`Coefficient Values on Multiple Model`)
+
+# Make table
+knitr::kable(coefficientTableCrime, "pipe")
+
+# Make plot with comparison
+
+coefficientTableCrime %>%
+  ggplot(aes(x = `Coefficient Values on Simple Model`,
+             y = `Coefficient Values on Multiple Model`,
+             color = `Variable Names`)) +
+  geom_point(alpha = 0.3) +
+  labs(title = "Comparing Coefficient Values on Simple \nand Multiple Linear Regression Models",
+       caption = "Eric Warren",
+       x = "Simple Linear Regression Model Coefficient Values",
+       y = "Multiple Linear Regression Model Coefficient Values",
+       color = "Variable Names") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+We can see that the absolute value of all the predictors coefficients multiple linear regression model are less than the absolute value of the predictors coefficients in the simple linear regression model. I found it interesting that the sign did flip for the zn, indus, nox, rm, tax, and ptratio -- in which all of these variables, except zn, did not have significant affect on the multiple linear regression model. The exception of zn, was so close to zero, which might have caused this. But the major takeaway is the effect that the predictor variables have on the per capita crime rate is much smaller when in a multiple linear regression model, rather than by itself in a simple linear regression model. 
+
+#### Part D
+
+Here we are going to see if there is non-linear association between any of the variables.
+
+First, look at how crime is affected by residential zones.
+```{r}
+crimeOnZoneCubed <- lm(crim ~ poly(zn, 3), Boston)
+summary(crimeOnZoneCubed)
+```
+
+We can see that in for the residential zones variable the squared term is statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by non-retail business.
+```{r}
+crimeOnIndusCubed <- lm(crim ~ poly(indus, 3), Boston)
+summary(crimeOnIndusCubed)
+```
+
+We can see that in for the non-retail business variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the river. Since this is a factor variable, it is zero or 1 and thus adding exponents to the model will not change anything. Thus, it does not have non-linear associated in terms of adding exponents.
+
+Next, look at how crime is affected by the nitrogen oxides.
+```{r}
+crimeOnNoxCubed <- lm(crim ~ poly(nox, 3), Boston)
+summary(crimeOnNoxCubed)
+```
+
+We can see that in for the nitrogen oxides variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the number of rooms per dwelling.
+```{r}
+crimeOnRmCubed <- lm(crim ~ poly(rm, 3), Boston)
+summary(crimeOnRmCubed)
+```
+
+We can see that in for the number of rooms per dwelling variable the squared term is statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the proportion of units built prior to 1940.
+```{r}
+crimeOnAgeCubed <- lm(crim ~ poly(age, 3), Boston)
+summary(crimeOnAgeCubed)
+```
+
+We can see that in for the proportion of units built prior to 1940 variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the weighted mean distance from Boston centers.
+```{r}
+crimeOnDisCubed <- lm(crim ~ poly(dis, 3), Boston)
+summary(crimeOnDisCubed)
+```
+
+We can see that in for the weighted mean distance from Boston centers variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the accessibility to radical highways.
+```{r}
+crimeOnRadCubed <- lm(crim ~ poly(rad, 3), Boston)
+summary(crimeOnRadCubed)
+```
+
+We can see that in for the index of accessibility to radical highways variable the squared term is statistically significant so this model has non-linear association. Since the squared variable is not as significant as others, the non-linearity is not as bad as others, but still present.
+
+Next, look at how crime is affected by the property tax rate.
+```{r}
+crimeOnTaxCubed <- lm(crim ~ poly(tax, 3), Boston)
+summary(crimeOnTaxCubed)
+```
+
+We can see that in for the property tax rate variable the squared term is statistically significant so this model has non-linear association.
+
+
+Next, look at how crime is affected by pupil-teacher ratio by town.
+```{r}
+crimeOnPtratioCubed <- lm(crim ~ poly(ptratio, 3), Boston)
+summary(crimeOnPtratioCubed)
+```
+
+We can see that in for the pupil to teaher ratio variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+Next, look at how crime is affected by the proportion of African-Americans.
+```{r}
+crimeOnBlackCubed <- lm(crim ~ poly(black, 3), Boston)
+summary(crimeOnBlackCubed)
+```
+
+Since the squared and cubed terms of this model are not significantly significant, we can say that African-American variable has a linear associated when just predicted with the crime rate per capita.
+
+Next, look at how crime is affected by the percentage of the lower status of population.
+```{r}
+crimeOnLstatCubed <- lm(crim ~ poly(lstat, 3), Boston)
+summary(crimeOnLstatCubed)
+```
+
+We can see that in for the percentage of the lower status of the population variable the squared term is statistically significant so this model has non-linear association.
+
+Lastly, look at how crime is affected by the median value of owned homes in thousands of dollars.
+```{r}
+crimeOnMedvCubed <- lm(crim ~ poly(medv, 3), Boston)
+summary(crimeOnMedvCubed)
+```
+
+We can see that in for the median value of owned homes in thousands of dollars variable the squared and cubed terms are statistically significant so this model has non-linear association.
+
+In conclusion, all of the predictor variables have non-linear association except the variables that describe if it bounds the river (since it is a factor of 0 or 1) and the proportion of African-Americans by town. Otherwise, the other 11 predictor variables have non-linear relationships in either cubic or quadratic terms. 
