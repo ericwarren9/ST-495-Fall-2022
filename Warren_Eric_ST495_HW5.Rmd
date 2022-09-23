@@ -134,13 +134,11 @@ Here we are going to perform classification using LDA (linear discriminant analy
 data.wine <- as_tibble(wine)
 library(MASS)
 set.seed(9)
-sample <- sample(c(TRUE, FALSE), 
-                 nrow(data.wine), 
-                 replace = TRUE, 
-                 prob = c(0.65, 0.35)
-                 )
+trainpct = 0.7
+n = nrow(data.wine)
+sample <- sample(1:n, round(n * trainpct)) 
 train <- data.wine[sample, ]
-test <- data.wine[!sample, ]
+test <- data.wine[-sample, ]
 
 ldaModel <- lda(Type ~ ., train)
 ldaModel
@@ -152,7 +150,7 @@ accuracyTable.lda
 accuracyTable.lda$overall[[1]] # Returns the accuracy of the model
 ```
 
-After doing Linear Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.lda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.lda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could accurately predict the type of wine using all the predictors, as it got `r round((1 - accuracyTable.lda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong!
+After doing Linear Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.lda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.lda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could do a pretty good job in predicting the type of wine using all the predictors, as it got `r round((1 - accuracyTable.lda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
 
 #### Part B
 
@@ -168,7 +166,7 @@ accuracyTable.qda
 accuracyTable.qda$overall[[1]] # Returns the error
 ```
 
-After doing Quadratic Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.qda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.qda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.qda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which was not as good as using Linear Discriminant Analysis.
+After doing Quadratic Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.qda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.qda$overall[[1]]) * 100, 2)`%. It is extremely remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.qda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which is better than using Linear Discriminant Analysis.
 
 #### Part C
 
@@ -185,7 +183,7 @@ accuracyTable.nb
 accuracyTable.nb$overall[[1]]
 ```
 
-After doing Naive Bayes, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.nb$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.nb$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.nb$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which gave us the same accuracy as using Quadratic Discriminant Analysis, but not as good as Linear Discriminant Analysis.
+After doing Naive Bayes, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.nb$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.nb$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.nb$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which is not as good as Linear Discriminant Analysis and Quadratic Discriminant Analysis.
 
 #### Part D
 
@@ -194,15 +192,23 @@ Here I am going to rank what I think the best classification models are to use f
 First, let us look at the classification errors.
 ```{r}
 `Classification Name` <- c("LDA", "QDA", "Naive Bayes")
-Accuracy <- c(accuracyTable.lda$overall[[1]], accuracyTable.qda$overall[[1]], accuracyTable.nb$overall[[1]])
+Accuracy <- round(c(accuracyTable.lda$overall[[1]], accuracyTable.qda$overall[[1]], accuracyTable.nb$overall[[1]]), 4)
 tableOfErrors <- as_tibble(cbind(`Classification Name`, Accuracy))
 knitr::kable(tableOfErrors, "pipe")
 ```
 
-By looking at this table, it seems to me that the LDA classification model is the most accurate for this data. Now keep in mind, Naive Bayes classification models are suited for multi-class data and this data set is only numerical and it is better for categorical data. For these reasons, I think it is not the best model to use. So between QDA and Naive Bayes, I would use the QDA plot, despite the accuracy being tied.
+By looking at this table, it seems to me that the QDA classification model is the most accurate for this data. Now keep in mind, Naive Bayes classification models are suited for multi-class data and this data set is not, as it is only numerical, and Naive Bayes is also better for categorical data, which this data is not. For these reasons, I think it is not the best model to use and probably worse than LDA and QDA.
+
+Since it is down to QDA or LDA for which one the best model is and the errors are so close (despite QDA seeming like the better model with the lower error), we should look at the covariance matrix. For LDA the covariance needs to essentially be equal for each variable in the data set, while for QDA it does not have to be. We are going to do a statistical test on this.
+```{r}
+covTest <- heplots::boxM(data.wine[ , 2:ncol(data.wine)], data.wine$Type)
+covTest
+```
+
+So because there is statistically significant evidence to conclude that the covariance is not equal across the variables, we can say that it would be better to use QDA over LDA for this reason, which reaffirms our initial hunch since the classification error rate was slightly lower for QDA.
 
 So in conclusion, my rankings from best to worst would be:
 
-1. LDA Classification Model
-2. QDA Classification Model
+1. QDA Classification Model
+2. LDA Classification Model
 3. Naive Bayes Classification Model
