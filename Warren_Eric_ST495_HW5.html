@@ -11,7 +11,7 @@
 
 <meta name="author" content="Eric Warren" />
 
-<meta name="date" content="2022-09-22" />
+<meta name="date" content="2022-09-23" />
 
 <title>ST 495 HW5</title>
 
@@ -365,7 +365,7 @@ pre code {
 
 <h1 class="title toc-ignore">ST 495 HW5</h1>
 <h4 class="author">Eric Warren</h4>
-<h4 class="date">2022-09-22</h4>
+<h4 class="date">2022-09-23</h4>
 
 </div>
 
@@ -591,13 +591,11 @@ library(MASS)</code></pre>
 ## 
 ##     select</code></pre>
 <pre class="r"><code>set.seed(9)
-sample &lt;- sample(c(TRUE, FALSE), 
-                 nrow(data.wine), 
-                 replace = TRUE, 
-                 prob = c(0.65, 0.35)
-                 )
+trainpct = 0.7
+n = nrow(data.wine)
+sample &lt;- sample(1:n, round(n * trainpct)) 
 train &lt;- data.wine[sample, ]
-test &lt;- data.wine[!sample, ]
+test &lt;- data.wine[-sample, ]
 
 ldaModel &lt;- lda(Type ~ ., train)
 ldaModel</code></pre>
@@ -605,38 +603,38 @@ ldaModel</code></pre>
 ## lda(Type ~ ., data = train)
 ## 
 ## Prior probabilities of groups:
-##         1         2         3 
-## 0.2966102 0.4661017 0.2372881 
+##     1     2     3 
+## 0.344 0.344 0.312 
 ## 
 ## Group means:
 ##    Alcohol    Malic      Ash Alcalinity Magnesium  Phenols Flavanoids
-## 1 13.74914 2.034857 2.464857   16.84286 105.34286 2.821143  2.9805714
-## 2 12.28964 1.804545 2.245455   20.09273  92.27273 2.270727  2.0676364
-## 3 13.18500 3.352143 2.464286   21.82143  99.75000 1.705000  0.7646429
+## 1 13.78884 1.993953 2.472326   16.87674 106.76744 2.890698   3.035116
+## 2 12.21814 2.044651 2.243023   20.16047  92.34884 2.194419   1.992326
+## 3 13.21179 3.380000 2.436410   21.56410 100.10256 1.689487   0.805641
 ##   Nonflavanoids Proanthocyanins    Color       Hue Dilution   Proline
-## 1     0.2862857        1.884000 5.409429 1.0608571 3.174286 1151.0571
-## 2     0.3672727        1.599818 3.142909 1.0615636 2.720727  511.2000
-## 3     0.4435714        1.152857 7.283214 0.6803571 1.766071  638.0357
+## 1     0.3000000        1.930000 5.503256 1.0630233 3.129070 1107.4884
+## 2     0.3700000        1.596977 2.949535 1.0522326 2.767442  503.9302
+## 3     0.4328205        1.188462 7.483333 0.6787179 1.690256  623.9744
 ## 
 ## Coefficients of linear discriminants:
 ##                          LD1          LD2
-## Alcohol         -0.284445706  0.768341827
-## Malic            0.119655646  0.478795205
-## Ash             -0.037707374  1.949341590
-## Alcalinity       0.106910625 -0.119215194
-## Magnesium       -0.015556056 -0.001755805
-## Phenols          0.692092030 -0.017538138
-## Flavanoids      -1.826127835 -0.611879711
-## Nonflavanoids   -2.282988272 -1.876746044
-## Proanthocyanins  0.281699218 -0.261331969
-## Color            0.338371525  0.272085963
-## Hue             -0.737147816 -1.078042842
-## Dilution        -1.073803237  0.178464683
-## Proline         -0.002957714  0.002625563
+## Alcohol         -0.274418851  1.286734941
+## Malic            0.161664072  0.211333912
+## Ash             -0.025170123  1.989399714
+## Alcalinity       0.103922738 -0.102411134
+## Magnesium       -0.001893942  0.009553067
+## Phenols          0.726507613  0.056670475
+## Flavanoids      -2.243015811 -0.400980344
+## Nonflavanoids   -2.127652967 -1.798562055
+## Proanthocyanins  0.370911328 -0.430351140
+## Color            0.322113692  0.136067454
+## Hue             -1.128439378 -1.648371737
+## Dilution        -1.266357776 -0.179819065
+## Proline         -0.002741015  0.002708541
 ## 
 ## Proportion of trace:
 ##    LD1    LD2 
-## 0.6557 0.3443</code></pre>
+## 0.7469 0.2531</code></pre>
 <pre class="r"><code>pred.lda &lt;- predict(ldaModel, test)
 table.lda &lt;- table(predicted = test$Type, observed = pred.lda$class)
 accuracyTable.lda &lt;- caret::confusionMatrix(table.lda)
@@ -645,40 +643,41 @@ accuracyTable.lda</code></pre>
 ## 
 ##          observed
 ## predicted  1  2  3
-##         1 24  0  0
-##         2  0 16  0
-##         3  0  0 20
+##         1 16  0  0
+##         2  2 25  1
+##         3  0  0  9
 ## 
 ## Overall Statistics
-##                                      
-##                Accuracy : 1          
-##                  95% CI : (0.9404, 1)
-##     No Information Rate : 0.4        
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16  
-##                                      
-##                   Kappa : 1          
-##                                      
-##  Mcnemar&#39;s Test P-Value : NA         
+##                                           
+##                Accuracy : 0.9434          
+##                  95% CI : (0.8434, 0.9882)
+##     No Information Rate : 0.4717          
+##     P-Value [Acc &gt; NIR] : 1.756e-13       
+##                                           
+##                   Kappa : 0.9081          
+##                                           
+##  Mcnemar&#39;s Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: 1 Class: 2 Class: 3
-## Sensitivity               1.0   1.0000   1.0000
-## Specificity               1.0   1.0000   1.0000
-## Pos Pred Value            1.0   1.0000   1.0000
-## Neg Pred Value            1.0   1.0000   1.0000
-## Prevalence                0.4   0.2667   0.3333
-## Detection Rate            0.4   0.2667   0.3333
-## Detection Prevalence      0.4   0.2667   0.3333
-## Balanced Accuracy         1.0   1.0000   1.0000</code></pre>
+## Sensitivity            0.8889   1.0000   0.9000
+## Specificity            1.0000   0.8929   1.0000
+## Pos Pred Value         1.0000   0.8929   1.0000
+## Neg Pred Value         0.9459   1.0000   0.9773
+## Prevalence             0.3396   0.4717   0.1887
+## Detection Rate         0.3019   0.4717   0.1698
+## Detection Prevalence   0.3019   0.5283   0.1698
+## Balanced Accuracy      0.9444   0.9464   0.9500</code></pre>
 <pre class="r"><code>accuracyTable.lda$overall[[1]] # Returns the accuracy of the model</code></pre>
-<pre><code>## [1] 1</code></pre>
+<pre><code>## [1] 0.9433962</code></pre>
 <p>After doing Linear Discriminant Analysis, this modeling technique was
 used to predict the <code>Type</code> of wine something is. Using cross
-validation, it is shown that this model has an accuracy of 100% or also
-known as a classification error of 0%. It is remarkable that this
-technique could accurately predict the type of wine using all the
-predictors, as it got 0 out of our 60 test data observations wrong!</p>
+validation, it is shown that this model has an accuracy of 94.34% or
+also known as a classification error of 5.66%. It is remarkable that
+this technique could do a pretty good job in predicting the type of wine
+using all the predictors, as it got 3 out of our 53 test data
+observations wrong.</p>
 </div>
 <div id="part-b-1" class="section level4">
 <h4>Part B</h4>
@@ -690,18 +689,18 @@ qdaModel</code></pre>
 ## qda(Type ~ ., data = train)
 ## 
 ## Prior probabilities of groups:
-##         1         2         3 
-## 0.2966102 0.4661017 0.2372881 
+##     1     2     3 
+## 0.344 0.344 0.312 
 ## 
 ## Group means:
 ##    Alcohol    Malic      Ash Alcalinity Magnesium  Phenols Flavanoids
-## 1 13.74914 2.034857 2.464857   16.84286 105.34286 2.821143  2.9805714
-## 2 12.28964 1.804545 2.245455   20.09273  92.27273 2.270727  2.0676364
-## 3 13.18500 3.352143 2.464286   21.82143  99.75000 1.705000  0.7646429
+## 1 13.78884 1.993953 2.472326   16.87674 106.76744 2.890698   3.035116
+## 2 12.21814 2.044651 2.243023   20.16047  92.34884 2.194419   1.992326
+## 3 13.21179 3.380000 2.436410   21.56410 100.10256 1.689487   0.805641
 ##   Nonflavanoids Proanthocyanins    Color       Hue Dilution   Proline
-## 1     0.2862857        1.884000 5.409429 1.0608571 3.174286 1151.0571
-## 2     0.3672727        1.599818 3.142909 1.0615636 2.720727  511.2000
-## 3     0.4435714        1.152857 7.283214 0.6803571 1.766071  638.0357</code></pre>
+## 1     0.3000000        1.930000 5.503256 1.0630233 3.129070 1107.4884
+## 2     0.3700000        1.596977 2.949535 1.0522326 2.767442  503.9302
+## 3     0.4328205        1.188462 7.483333 0.6787179 1.690256  623.9744</code></pre>
 <pre class="r"><code>pred.qda &lt;- predict(qdaModel, test)
 table.qda &lt;- table(predicted = test$Type, observed = pred.qda$class)
 accuracyTable.qda &lt;- caret::confusionMatrix(table.qda)
@@ -710,41 +709,42 @@ accuracyTable.qda</code></pre>
 ## 
 ##          observed
 ## predicted  1  2  3
-##         1 23  1  0
-##         2  0 16  0
-##         3  0  1 19
+##         1 16  0  0
+##         2  1 27  0
+##         3  0  0  9
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9667          
-##                  95% CI : (0.8847, 0.9959)
-##     No Information Rate : 0.3833          
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                Accuracy : 0.9811          
+##                  95% CI : (0.8993, 0.9995)
+##     No Information Rate : 0.5094          
+##     P-Value [Acc &gt; NIR] : 1.556e-14       
 ##                                           
-##                   Kappa : 0.9496          
+##                   Kappa : 0.9688          
 ##                                           
 ##  Mcnemar&#39;s Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: 1 Class: 2 Class: 3
-## Sensitivity            1.0000   0.8889   1.0000
-## Specificity            0.9730   1.0000   0.9756
-## Pos Pred Value         0.9583   1.0000   0.9500
-## Neg Pred Value         1.0000   0.9545   1.0000
-## Prevalence             0.3833   0.3000   0.3167
-## Detection Rate         0.3833   0.2667   0.3167
-## Detection Prevalence   0.4000   0.2667   0.3333
-## Balanced Accuracy      0.9865   0.9444   0.9878</code></pre>
+## Sensitivity            0.9412   1.0000   1.0000
+## Specificity            1.0000   0.9615   1.0000
+## Pos Pred Value         1.0000   0.9643   1.0000
+## Neg Pred Value         0.9730   1.0000   1.0000
+## Prevalence             0.3208   0.5094   0.1698
+## Detection Rate         0.3019   0.5094   0.1698
+## Detection Prevalence   0.3019   0.5283   0.1698
+## Balanced Accuracy      0.9706   0.9808   1.0000</code></pre>
 <pre class="r"><code>accuracyTable.qda$overall[[1]] # Returns the error</code></pre>
-<pre><code>## [1] 0.9666667</code></pre>
+<pre><code>## [1] 0.9811321</code></pre>
 <p>After doing Quadratic Discriminant Analysis, this modeling technique
 was used to predict the <code>Type</code> of wine something is. Using
-cross validation, it is shown that this model has an accuracy of 96.67%
-or also known as a classification error of 3.33%. It is remarkable that
-this technique could predict very well the type of wine using all the
-predictors, as it got only 2 out of our 60 test data observations wrong,
-which was not as good as using Linear Discriminant Analysis.</p>
+cross validation, it is shown that this model has an accuracy of 98.11%
+or also known as a classification error of 1.89%. It is extremely
+remarkable that this technique could predict very well the type of wine
+using all the predictors, as it got only 1 out of our 53 test data
+observations wrong, which is better than using Linear Discriminant
+Analysis.</p>
 </div>
 <div id="part-c-1" class="section level4">
 <h4>Part C</h4>
@@ -761,87 +761,87 @@ nbModel</code></pre>
 ## 
 ## A-priori probabilities:
 ## Y
-##         1         2         3 
-## 0.2966102 0.4661017 0.2372881 
+##     1     2     3 
+## 0.344 0.344 0.312 
 ## 
 ## Conditional probabilities:
 ##    Alcohol
 ## Y       [,1]      [,2]
-##   1 13.74914 0.4829406
-##   2 12.28964 0.5637144
-##   3 13.18500 0.5401612
+##   1 13.78884 0.4655115
+##   2 12.21814 0.4156077
+##   3 13.21179 0.5348629
 ## 
 ##    Malic
 ## Y       [,1]      [,2]
-##   1 2.034857 0.6729145
-##   2 1.804545 0.9061208
-##   3 3.352143 1.1184426
+##   1 1.993953 0.6580134
+##   2 2.044651 1.1234923
+##   3 3.380000 1.1637847
 ## 
 ##    Ash
 ## Y       [,1]      [,2]
-##   1 2.464857 0.1887166
-##   2 2.245455 0.3014030
-##   3 2.464286 0.1889822
+##   1 2.472326 0.2356029
+##   2 2.243023 0.2923023
+##   3 2.436410 0.1892852
 ## 
 ##    Alcalinity
 ## Y       [,1]     [,2]
-##   1 16.84286 2.443032
-##   2 20.09273 3.187409
-##   3 21.82143 2.342104
+##   1 16.87674 2.665551
+##   2 20.16047 3.285186
+##   3 21.56410 2.192029
 ## 
 ##    Magnesium
-## Y        [,1]      [,2]
-##   1 105.34286  9.090858
-##   2  92.27273 11.640374
-##   3  99.75000 11.545803
+## Y        [,1]     [,2]
+##   1 106.76744 10.84487
+##   2  92.34884 14.37737
+##   3 100.10256 11.56855
 ## 
 ##    Phenols
 ## Y       [,1]      [,2]
-##   1 2.821143 0.4014735
-##   2 2.270727 0.5466526
-##   3 1.705000 0.4190686
+##   1 2.890698 0.3583321
+##   2 2.194419 0.5216380
+##   3 1.689487 0.3803112
 ## 
 ##    Flavanoids
-## Y        [,1]      [,2]
-##   1 2.9805714 0.4517023
-##   2 2.0676364 0.6188698
-##   3 0.7646429 0.2854299
+## Y       [,1]      [,2]
+##   1 3.035116 0.4075033
+##   2 1.992326 0.5873866
+##   3 0.805641 0.3024705
 ## 
 ##    Nonflavanoids
-## Y        [,1]      [,2]
-##   1 0.2862857 0.0594131
-##   2 0.3672727 0.1222089
-##   3 0.4435714 0.1134383
+## Y        [,1]       [,2]
+##   1 0.3000000 0.07406561
+##   2 0.3700000 0.12192894
+##   3 0.4328205 0.12165414
 ## 
 ##    Proanthocyanins
 ## Y       [,1]      [,2]
-##   1 1.884000 0.4502888
-##   2 1.599818 0.5769797
-##   3 1.152857 0.4737467
+##   1 1.930000 0.4209174
+##   2 1.596977 0.6412508
+##   3 1.188462 0.4122693
 ## 
 ##    Color
 ## Y       [,1]      [,2]
-##   1 5.409429 1.2738754
-##   2 3.142909 0.9186235
-##   3 7.283214 2.4408332
+##   1 5.503256 1.2433934
+##   2 2.949535 0.7312935
+##   3 7.483333 2.3331336
 ## 
 ##    Hue
 ## Y        [,1]      [,2]
-##   1 1.0608571 0.1292142
-##   2 1.0615636 0.1991083
-##   3 0.6803571 0.1119352
+##   1 1.0630233 0.1189545
+##   2 1.0522326 0.2001500
+##   3 0.6787179 0.1117841
 ## 
 ##    Dilution
 ## Y       [,1]      [,2]
-##   1 3.174286 0.3769794
-##   2 2.720727 0.4889022
-##   3 1.766071 0.2958771
+##   1 3.129070 0.3833425
+##   2 2.767442 0.4898352
+##   3 1.690256 0.2703262
 ## 
 ##    Proline
 ## Y        [,1]     [,2]
-##   1 1151.0571 233.3812
-##   2  511.2000 138.4252
-##   3  638.0357 133.7379</code></pre>
+##   1 1107.4884 220.5417
+##   2  503.9302 157.0410
+##   3  623.9744 115.2753</code></pre>
 <pre class="r"><code>pred.nb &lt;- predict(nbModel, test)
 table.nb &lt;- table(predicted = test$Type, observed = pred.nb)
 accuracyTable.nb &lt;- caret::confusionMatrix(table.nb)
@@ -850,42 +850,42 @@ accuracyTable.nb</code></pre>
 ## 
 ##          observed
 ## predicted  1  2  3
-##         1 23  1  0
-##         2  1 15  0
-##         3  0  0 20
+##         1 16  0  0
+##         2  3 23  2
+##         3  0  0  9
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9667          
-##                  95% CI : (0.8847, 0.9959)
-##     No Information Rate : 0.4             
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                Accuracy : 0.9057          
+##                  95% CI : (0.7934, 0.9687)
+##     No Information Rate : 0.434           
+##     P-Value [Acc &gt; NIR] : 7.153e-13       
 ##                                           
-##                   Kappa : 0.9493          
+##                   Kappa : 0.8496          
 ##                                           
 ##  Mcnemar&#39;s Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: 1 Class: 2 Class: 3
-## Sensitivity            0.9583   0.9375   1.0000
-## Specificity            0.9722   0.9773   1.0000
-## Pos Pred Value         0.9583   0.9375   1.0000
-## Neg Pred Value         0.9722   0.9773   1.0000
-## Prevalence             0.4000   0.2667   0.3333
-## Detection Rate         0.3833   0.2500   0.3333
-## Detection Prevalence   0.4000   0.2667   0.3333
-## Balanced Accuracy      0.9653   0.9574   1.0000</code></pre>
+## Sensitivity            0.8421   1.0000   0.8182
+## Specificity            1.0000   0.8333   1.0000
+## Pos Pred Value         1.0000   0.8214   1.0000
+## Neg Pred Value         0.9189   1.0000   0.9545
+## Prevalence             0.3585   0.4340   0.2075
+## Detection Rate         0.3019   0.4340   0.1698
+## Detection Prevalence   0.3019   0.5283   0.1698
+## Balanced Accuracy      0.9211   0.9167   0.9091</code></pre>
 <pre class="r"><code>accuracyTable.nb$overall[[1]]</code></pre>
-<pre><code>## [1] 0.9666667</code></pre>
+<pre><code>## [1] 0.9056604</code></pre>
 <p>After doing Naive Bayes, this modeling technique was used to predict
 the <code>Type</code> of wine something is. Using cross validation, it
-is shown that this model has an accuracy of 96.67% or also known as a
-classification error of 3.33%. It is remarkable that this technique
+is shown that this model has an accuracy of 90.57% or also known as a
+classification error of 9.43%. It is remarkable that this technique
 could predict very well the type of wine using all the predictors, as it
-got only 2 out of our 60 test data observations wrong, which gave us the
-same accuracy as using Quadratic Discriminant Analysis, but not as good
-as Linear Discriminant Analysis.</p>
+got only 5 out of our 53 test data observations wrong, which is not as
+good as Linear Discriminant Analysis and Quadratic Discriminant
+Analysis.</p>
 </div>
 <div id="part-d-1" class="section level4">
 <h4>Part D</h4>
@@ -893,7 +893,7 @@ as Linear Discriminant Analysis.</p>
 are to use for this data.</p>
 <p>First, let us look at the classification errors.</p>
 <pre class="r"><code>`Classification Name` &lt;- c(&quot;LDA&quot;, &quot;QDA&quot;, &quot;Naive Bayes&quot;)
-Accuracy &lt;- c(accuracyTable.lda$overall[[1]], accuracyTable.qda$overall[[1]], accuracyTable.nb$overall[[1]])
+Accuracy &lt;- round(c(accuracyTable.lda$overall[[1]], accuracyTable.qda$overall[[1]], accuracyTable.nb$overall[[1]]), 4)
 tableOfErrors &lt;- as_tibble(cbind(`Classification Name`, Accuracy))
 knitr::kable(tableOfErrors, &quot;pipe&quot;)</code></pre>
 <table>
@@ -906,29 +906,46 @@ knitr::kable(tableOfErrors, &quot;pipe&quot;)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">LDA</td>
-<td align="left">1</td>
+<td align="left">0.9434</td>
 </tr>
 <tr class="even">
 <td align="left">QDA</td>
-<td align="left">0.966666666666667</td>
+<td align="left">0.9811</td>
 </tr>
 <tr class="odd">
 <td align="left">Naive Bayes</td>
-<td align="left">0.966666666666667</td>
+<td align="left">0.9057</td>
 </tr>
 </tbody>
 </table>
-<p>By looking at this table, it seems to me that the LDA classification
+<p>By looking at this table, it seems to me that the QDA classification
 model is the most accurate for this data. Now keep in mind, Naive Bayes
 classification models are suited for multi-class data and this data set
-is only numerical and it is better for categorical data. For these
-reasons, I think it is not the best model to use. So between QDA and
-Naive Bayes, I would use the QDA plot, despite the accuracy being
-tied.</p>
+is not, as it is only numerical, and Naive Bayes is also better for
+categorical data, which this data is not. For these reasons, I think it
+is not the best model to use and probably worse than LDA and QDA.</p>
+<p>Since it is down to QDA or LDA for which one the best model is and
+the errors are so close (despite QDA seeming like the better model with
+the lower error), we should look at the covariance matrix. For LDA the
+covariance needs to essentially be equal for each variable in the data
+set, while for QDA it does not have to be. We are going to do a
+statistical test on this.</p>
+<pre class="r"><code>covTest &lt;- heplots::boxM(data.wine[ , 2:ncol(data.wine)], data.wine$Type)
+covTest</code></pre>
+<pre><code>## 
+##  Box&#39;s M-test for Homogeneity of Covariance Matrices
+## 
+## data:  data.wine[, 2:ncol(data.wine)]
+## Chi-Sq (approx.) = 684.2, df = 182, p-value &lt; 2.2e-16</code></pre>
+<p>So because there is statistically significant evidence to conclude
+that the covariance is not equal across the variables, we can say that
+it would be better to use QDA over LDA for this reason, which reaffirms
+our initial hunch since the classification error rate was slightly lower
+for QDA.</p>
 <p>So in conclusion, my rankings from best to worst would be:</p>
 <ol style="list-style-type: decimal">
-<li>LDA Classification Model</li>
 <li>QDA Classification Model</li>
+<li>LDA Classification Model</li>
 <li>Naive Bayes Classification Model</li>
 </ol>
 </div>
