@@ -1,0 +1,208 @@
+---
+title: "ST 495 HW5"
+author: "Eric Warren"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      fig.height = 7,
+                      fig.width = 10)
+```
+
+## Honor Code {.tabset}
+
+I have neither given nor received unauthorized assistance on this test or assignment. -**Eric Warren**
+
+### Problem 1 {.tabset}
+
+#### Read in the data
+
+Here we are going to read in the mtcars data.
+```{r}
+library(tidyverse)
+mtcars <- as_tibble(mtcars)
+```
+
+#### Part A
+
+Here we are going to construct a plot of `hp` (x-axis) and `mpg` (y-axis), with different colors for different values of `cyl`.
+```{r}
+mtcars %>%
+  ggplot(aes(x = hp,
+             y = mpg,
+             color = as_factor(cyl))) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Relationship Between Horsepower and MPG \nBy Looking at Number of Cylinders in Car",
+       caption = "Eric Warren",
+       x = "Horsepower",
+       y = "MPG",
+       color = "Number of Cylinders") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+From looking at this plot, we can see that there is a negative correlation between horsepower and mpg. We can also see that cars with fewer cylinders tend to have less horsepower but are higher in mpg and the reverse is true with cars with more cylinders.
+
+#### Part B
+
+The `am` variable in the *`mtcars`* data set is a factor variable that will only have values of 0 and 1; whereas, if the observation has 0, then it has an automatic transmission versus a value of 1 indicating the car has a manual transmission. 
+
+#### Part C
+
+Here we are going to construct a plot of `hp` (x-axis) and `wt` (y-axis), with different colors for different values of `am`.
+```{r}
+mtcars %>%
+  ggplot(aes(x = hp,
+             y = wt,
+             color = as_factor(am))) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Relationship Between Horsepower and Car Weight \nBy Looking at the Type of Transmission",
+       caption = "Eric Warren",
+       x = "Horsepower",
+       y = "Car Weight (per 1000 lbs)") +
+  scale_color_discrete(name = "Type of Transmission",
+                       labels = c("Automatic", "Manual")) +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+For the most part we can see a pattern between automatic and manual cars. Automatic cars tend to weigh more as most are above 3,000 pounds and most manual cars are below this threshold. But there are some that do not meet this assumption. Horsepower does not seem to help too much but it looks like a trend shown could be that manual cars have slightly less horsepower compared to automatic cars. The weight of the car should help us a lot more in determining the type of car it is, as only `r round(3/nrow(mtcars) * 100, 2)`% of cars do not meet the weight statement of below 3,000 pounds and it is manual or above 3,000 pounds and it is manual.
+
+#### Part D
+
+We are going to fit a logistic regression model with `wt` as the only feature.
+```{r}
+am2wtModel <- glm(am ~ wt, mtcars, family = "binomial")
+summary(am2wtModel)
+```
+
+We can see from this model that heavier cars are more likely to have an automatic transmission (like said in Part C) -- also known as less likely to have a manual transmission -- because the coefficient of the `wt` variable is negative saying that cars with less weight are manual. If the weight increases by 1000 pounds, the change in odds of a car having a manual transmission is about `r round(exp(am2wtModel$coefficients[[2]] * 1000), 4)`. This is essentially saying that as we add 1000 lbs to the car weight, it is almost certain (or extremely likely) that the car will have an automatic transmission.
+
+#### Part E
+
+We are going to fit a logistic regression model with `hp` as the only feature.
+```{r}
+am2hpModel <- glm(am ~ hp, mtcars, family = "binomial")
+summary(am2hpModel)
+```
+
+We can see from this model that cars with higher horsepower are more likely to have an automatic transmission (like said in Part C) -- also known as less likely to have a manual transmission -- because the coefficient of the `hp` variable is negative saying that cars with less horsepower are manual. If the horsepower increases by 100 pounds, the change in odds of a car having a manual transmission is about `r round(exp(am2hpModel$coefficients[[2]] * 100), 4)`. This is essentially saying that as we add 100 horsepower to the car, it will be about `r 100 * round(1 - exp(am2hpModel$coefficients[[2]] * 100), 4)`% less likely that the car will have a manual transmission.
+
+#### Part F
+
+If I had to pick a model that helped predict if a car had a manual or automatic transmission, I would pick the model looking at car weight. As said in Part C, it just looked better on a graph. The big that stands out is that car weight was a significantly significant variable to have an effect on the transmission type. On the flip side, the car horsepower was *NOT* a significantly significant variable to have an effect on the transmission type, so there is a chance that this has no effect on the response variable in question. Thus, I believe it would be better to use the `wt` variable as a predictor of transmission type, and thus the model in Part D is better.
+
+### Problem 2 {.tabset}
+
+#### Read in the Data
+
+Here we are going to read in the data.
+```{r}
+library(rattle)
+data.wine <- as_tibble(wine)
+```
+
+Something to check before we do our analysis using our classification techniques is to make sure the variables follow a normal distribution. We are going to make sure here.
+```{r}
+# Scale the data
+data.wine[ , 2:ncol(data.wine)] <- scale(data.wine[ , 2:ncol(data.wine)])
+
+# Find the means of all the columns to make sure they are zero
+apply(data.wine[ , 2:ncol(data.wine)], 2, mean)
+
+# Find the standard deviations of all columns to make sure they are 1
+apply(data.wine[ , 2:ncol(data.wine)], 2, sd)
+```
+
+As we can see all the variables are normal so we can proceed with our testing.
+
+#### Part A
+
+Here we are going to perform classification using LDA (linear discriminant analysis) and report the classification error rate.
+```{r}
+data.wine <- as_tibble(wine)
+library(MASS)
+set.seed(9)
+sample <- sample(c(TRUE, FALSE), 
+                 nrow(data.wine), 
+                 replace = TRUE, 
+                 prob = c(0.65, 0.35)
+                 )
+train <- data.wine[sample, ]
+test <- data.wine[!sample, ]
+
+ldaModel <- lda(Type ~ ., train)
+ldaModel
+
+pred.lda <- predict(ldaModel, test)
+table.lda <- table(predicted = test$Type, observed = pred.lda$class)
+accuracyTable.lda <- caret::confusionMatrix(table.lda)
+accuracyTable.lda
+accuracyTable.lda$overall[[1]] # Returns the accuracy of the model
+```
+
+After doing Linear Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.lda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.lda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could accurately predict the type of wine using all the predictors, as it got `r round((1 - accuracyTable.lda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong!
+
+#### Part B
+
+Here we are going to perform classification using QDA (quadratic discriminant analysis) and report the classification error rate.
+```{r}
+qdaModel <- qda(Type ~ ., train)
+qdaModel
+
+pred.qda <- predict(qdaModel, test)
+table.qda <- table(predicted = test$Type, observed = pred.qda$class)
+accuracyTable.qda <- caret::confusionMatrix(table.qda)
+accuracyTable.qda
+accuracyTable.qda$overall[[1]] # Returns the error
+```
+
+After doing Quadratic Discriminant Analysis, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.qda$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.qda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.qda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which was not as good as using Linear Discriminant Analysis.
+
+#### Part C
+
+Here we are going to perform classification using NB (Naive Bayes) and report the classification error rate.
+```{r}
+library(e1071)
+nbModel <- naiveBayes(Type ~ ., train)
+nbModel
+
+pred.nb <- predict(nbModel, test)
+table.nb <- table(predicted = test$Type, observed = pred.nb)
+accuracyTable.nb <- caret::confusionMatrix(table.nb)
+accuracyTable.nb
+accuracyTable.nb$overall[[1]]
+```
+
+After doing Naive Bayes, this modeling technique was used to predict the `Type` of wine something is. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.nb$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.nb$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could predict very well the type of wine using all the predictors, as it got only `r round((1 - accuracyTable.nb$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong, which gave us the same accuracy as using Quadratic Discriminant Analysis, but not as good as Linear Discriminant Analysis.
+
+#### Part D
+
+Here I am going to rank what I think the best classification models are to use for this data.
+
+First, let us look at the classification errors.
+```{r}
+`Classification Name` <- c("LDA", "QDA", "Naive Bayes")
+Accuracy <- c(accuracyTable.lda$overall[[1]], accuracyTable.qda$overall[[1]], accuracyTable.nb$overall[[1]])
+tableOfErrors <- as_tibble(cbind(`Classification Name`, Accuracy))
+knitr::kable(tableOfErrors, "pipe")
+```
+
+By looking at this table, it seems to me that the LDA classification model is the most accurate for this data. Now keep in mind, Naive Bayes classification models are suited for multi-class data and this data set is only numerical and it is better for categorical data. For these reasons, I think it is not the best model to use. So between QDA and Naive Bayes, I would use the QDA plot, despite the accuracy being tied.
+
+So in conclusion, my rankings from best to worst would be:
+
+1. LDA Classification Model
+2. QDA Classification Model
+3. Naive Bayes Classification Model
