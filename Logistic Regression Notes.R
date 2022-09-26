@@ -59,48 +59,49 @@ summary(fit3)
 
 
 # Classification using LDA (linear discriminant analysis) -----------------
+data.iris <- as_tibble(iris)
 
-lda1 = lda(Species~Sepal.Length+Sepal.Width,data=data.iris)
+lda1 = lda(Species ~ Sepal.Length + Sepal.Width, data.iris)
 lda1 #mean and SD
 summary(lda1)
-pred.lda1 = predict(lda1,data.iris)
+pred.lda1 <- predict(lda1, data.iris)
 pred.lda1$class
 
 # how to quantify the misclassification error?
-sum(data.iris$Species!=pred.lda1$class)/nrow(data.iris)
+sum(data.iris$Specie != pred.lda1$class) / nrow(data.iris)
 
 # Now let us use petal dimensions
-lda2 = lda(Species~Petal.Length+Petal.Width,data=data.iris)
+lda2 <- lda(Species ~ Petal.Length + Petal.Width, data.iris)
 summary(lda2)
-pred.lda2 = predict(lda2,data.iris)
+pred.lda2 <- predict(lda2, data.iris)
 pred.lda2$class
 
 # how to quantify the misclassification error?
-sum(data.iris$Species!=pred.lda2$class)/nrow(data.iris)
+sum(data.iris$Species != pred.lda2$class) / nrow(data.iris)
 
 # Let us use all the data
-lda3 = lda(Species~.,data=data.iris)
+lda3 <- lda(Species ~ ., data.iris)
 summary(lda3)
-pred.lda3 = predict(lda3,data.iris)
+pred.lda3 <- predict(lda3, data.iris)
 pred.lda3
 
 # how to quantify the misclassification error?
-sum(data.iris$Species!=pred.lda3$class)/nrow(data.iris)
+sum(data.iris$Species != pred.lda3$class) / nrow(data.iris)
 
 
 # Let us classify using QDA -----------------------------------------------
 
-qda3 = qda(Species~.,data=data.iris)
+qda3 <- qda(Species ~ ., data.iris)
 qda3 #mean only
-pred.qda3 = predict(qda3,data.iris)
-sum(data.iris$Species!=pred.qda3$class)/nrow(data.iris)
+pred.qda3 <- predict(qda3, data.iris)
+sum(data.iris$Species != pred.qda3$class) / nrow(data.iris)
 
 
 # Naive Bayes -------------------------------------------------------------
 
 library(e1071)
-nb3 = naiveBayes(Species~.,data=data.iris)
+nb3 <- naiveBayes(Species~ ., data.iris)
 nb3 #mean and SD
 summary(nb3)
-pred.nb3 = predict(nb3,data.iris)
-sum(data.iris$Species!=pred.nb3)/nrow(data.iris)
+pred.nb3 <- predict(nb3, data.iris)
+sum(data.iris$Species != pred.nb3) / nrow(data.iris)
