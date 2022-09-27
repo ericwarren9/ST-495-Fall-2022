@@ -58,8 +58,20 @@ fit3 <- glm(default ~ student, dataDefault,
 summary(fit3)
 
 
-# Classification using LDA (linear discriminant analysis) -----------------
+# Multinomial logistic regression -----------------------------------------
+
 data.iris <- as_tibble(iris)
+
+library(nnet)
+logreg <- multinom(Species ~ ., data.iris)
+summary(logreg)
+predict(logreg, type = "probs", newdata = data.iris)
+predict(logreg, type = "class", newdata = data.iris)
+logreg.pred <- predict(logreg, type = "class", newdata = data.iris)
+sum(data.iris$Species != logreg.pred) / nrow(data.iris)
+
+
+# Classification using LDA (linear discriminant analysis) -----------------
 
 lda1 = lda(Species ~ Sepal.Length + Sepal.Width, data.iris)
 lda1 #mean and SD
