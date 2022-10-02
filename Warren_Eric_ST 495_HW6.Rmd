@@ -1,0 +1,748 @@
+---
+title: "ST 495 HW6"
+author: "Eric Warren"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      fig.height = 7,
+                      fig.width = 10)
+```
+
+## Honor Code {.tabset}
+
+I have neither given nor received unauthorized assistance on this test or assignment. -**Eric Warren**
+
+### Problem 1 {.tabset}
+
+#### Part A
+
+The equation is $$y = -6 + 0.05 * x_1 + x_2$$ where y is the predicted probability that the student gets an A and x_1 is hours studied and x_2 is their undergrad GPA.
+
+If the student gets studies for 40 hours and has a GPA of 3.5 we can predict that their predicted probability of getting an A on the test is `r round(exp(-6 + .05 * 40 + 3.5) / (1 + exp(-6 + .05 * 40 + 3.5)), 4)`. 
+
+#### Part B
+
+Now we want to use the equation from before to figure out how many hours you have to study to have a 50% chance of getting an A if you have a 3.5 GPA.
+
+We can say that $$0.50 = exp(-6 + 0.05 * x_1 + 3.5) / (1 + exp(-6 + 0.05 * x_1 + 3.5))$$
+<=>
+$$0.50 = exp(-2.5 + 0.05 * x_1) / (1 + exp(-2.5 + 0.05 * x_1))$$
+<=>
+$$0.5 * (1 + exp(-2.5 + 0.05 * x_1)) = exp(-2.5 + 0.05 * x_1)$$
+<=>
+$$0.5 + 0.5 * exp(-2.5 + 0.05 * x_1) = exp(-2.5 + 0.05 * x_1)$$
+<=>
+$$0.5 = 0.5 * exp(-2.5 + 0.05 * x_1)$$
+<=>
+$$1 = exp(-2.5 + 0.05 * x_1)$$
+<=>
+$$ln(1) = ln(exp(-2.5 + 0.05 * x_1))$$
+<=>
+$$0 = -2.5 + 0.05 * x_1$$
+<=>
+$$2.5 = 0.05 * x_1$$
+<=>
+$$2.5/0.05 = x_1$$
+<=>
+$$50 = x_1$$
+
+So the student with a 3.5 GPA should study for 50 hours to have a 50% chance of getting an A.
+
+### Problem 2 {.tabset}
+
+#### Part A
+
+If the odds are 0.37, we expect roughly `r round((0.37 / (1 + 0.37) * 100), 2)`% of people to default on their credit card payments or a probability of `r round(0.37 / (1 + 0.37), 4)` to occur. 
+
+#### Part B
+
+If there is a 16% chance of defaulting, we can calculate the odds by:
+$$0.16 = odds / (1 + odds)$$
+<=>
+$$0.16 * (1 + odds) = odds$$
+<=>
+$$0.16 + 0.16 * odds = odds$$
+<=>
+$$0.16 = 0.84 * odds$$
+<=>
+$$0.16/0.84 = odds$$
+<=>
+$$`r round(0.16/0.84, 4)` = odds$$
+
+So if there is a 16% chance of defaulting, we can say the odds of defaulting are `r round(0.16/0.84, 4)`.
+
+### Problem 3 {.tabset}
+
+#### Read in Data
+
+Here we will read in the data.
+```{r}
+library(tidyverse)
+library(ISLR2)
+weekly <- as_tibble(Weekly)
+```
+
+#### Part A
+
+Here we are going to see to produce summaries and see if there are any issues with it.
+```{r}
+summary(weekly)
+weekly %>%
+  ggplot(aes(x = Lag1,
+             y = Lag2,
+             color = Year)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Relationship Between the Lags by Year",
+       caption = "Eric Warren",
+       x = "Lag 1",
+       y = "Lag 2",
+       color = "Year") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+weekly %>%
+  ggplot(aes(x = Volume,
+             y = Direction,
+             color = Year)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Relationship Between Volume and Direction by Year",
+       caption = "Eric Warren",
+       x = "Volume",
+       y = "Direction",
+       color = "Year") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+weekly %>%
+  ggplot(aes(x = Year,
+             y = Volume)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Relationship Between Year and Volume",
+       caption = "Eric Warren",
+       x = "Year",
+       y = "Volume") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+We can tell from this graph that the lags are fairly similar with each other and around zero. We can also see that the direction has two outputs or a zero and one response variable. The regression we would have to do on this would be logistic. The volume tends to be increasing by year too in a logistic way.
+
+#### Part B
+
+Here we are going to fit a logistic regression on direction based on volume and the lags.
+```{r}
+weekly <- as_tibble(Weekly)
+directionFit <- glm(Direction ~ . - Today - Year, weekly,
+                    family = "binomial")
+summary(directionFit)
+```
+
+The only value that is significantly significant (at alpha being 0.05) is lag2. The other five are not.
+
+#### Part C
+
+Here we are going to make a compute the confusion matrix for linear regression predictions.
+```{r}
+library(caret)
+modelDirectionPredictions <- predict(directionFit, 
+                                     type = "response", 
+                                     newdata = weekly)
+weekly$Direction <- ifelse(weekly$Direction == "Up", 1, 0)
+confusionMatrixDirection <- confusionMatrix(as.factor(as.numeric(modelDirectionPredictions >= 0.5)), as.factor(weekly$Direction))
+confusionMatrixDirection
+```
+
+As we can see, the logistic regression has an accuracy of `r round(confusionMatrixDirection$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection$overall[[1]] * 100, 2)`% of the time. As we can see in the matrix, the vast majority of the mistakes is coming from saying that the direction should go up even though it went down for the week. We knew the predictors were not good estimates, so it makes sense this mistake could be occurring.
+
+#### Part D
+
+Now fit the logistic regression model using a training data period
+from 1990 to 2008, with Lag2 as the only predictor. Compute the
+confusion matrix and the overall fraction of correct predictions
+for the held out data (that is, the data from 2009 and 2010).
+```{r}
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionFit2 <- glm(Direction ~ Lag2, trainingDirection,
+                     family = "binomial")
+modelDirectionPredictions2 <- predict(directionFit2,
+                                      type = "response",
+                                      newdata = testingDirection)
+testingDirection$Direction <- ifelse(testingDirection$Direction == "Up", 1, 0)
+confusionMatrixDirection2 <- confusionMatrix(as.factor(as.numeric(modelDirectionPredictions2 >= 0.5)), as.factor(testingDirection$Direction))
+confusionMatrixDirection2
+```
+
+We can see that using logistic regression causes an accuracy level of `r round(confusionMatrixDirection2$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection2$overall[[1]] * 100, 2)`% of the time. We can still see that it thinks it will go up more often than not which is causing this issue in prediction.
+
+#### Part E
+
+Now let's look at how LDA does.
+
+```{r}
+library(MASS)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionLDA <- lda(Direction ~ Lag2, trainingDirection)
+pred.lda <- predict(directionLDA, testingDirection)
+confusionMatrixDirection3 <- confusionMatrix(pred.lda$class, as.factor(testingDirection$Direction))
+```
+
+We can see that using LDA causes an accuracy level of `r round(confusionMatrixDirection3$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection3$overall[[1]] * 100, 2)`% of the time. We can still see that it thinks it will go up more often than not which is causing this issue in prediction. This is as good as logistic regression.
+
+#### Part F
+
+Now let's look at how QDA does.
+
+```{r}
+library(MASS)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionQDA <- qda(Direction ~ Lag2, trainingDirection)
+pred.qda <- predict(directionQDA, testingDirection)
+confusionMatrixDirection4 <- confusionMatrix(pred.qda$class, as.factor(testingDirection$Direction))
+```
+
+We can see that using QDA causes an accuracy level of `r round(confusionMatrixDirection4$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection4$overall[[1]] * 100, 2)`% of the time. We can still see that it thinks it will always go up, which is causing this issue in prediction. This is the worse than logistic regression and LDA.
+
+#### Part G
+
+Let's see how KNN does with K = 1. 
+```{r}
+library(class)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+knn.pred <- knn(train = trainingDirection[ , "Lag2"], test = testingDirection[ , "Lag2"], 
+                cl = trainingDirection$Direction, 
+                k = 1)
+confusionMatrixDirection5 <- confusionMatrix(knn.pred, testingDirection$Direction)
+confusionMatrixDirection5
+```
+
+We can see that using K Nearest Neighbors causes an accuracy level of `r round(confusionMatrixDirection5$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection5$overall[[1]] * 100, 2)`% of the time. We can see that it thinks it is almost an even split and just essentially guessing which value makes sense which is causing this issue in prediction. This is the worst prediction method so far.
+
+#### Part H
+
+Now let's look at how Naive Bayes does.
+```{r}
+library(e1071)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionNB <- naiveBayes(Direction ~ Lag2, trainingDirection)
+pred.nb <- predict(directionNB, testingDirection)
+confusionMatrixDirection6 <- confusionMatrix(pred.nb, as.factor(testingDirection$Direction))
+```
+
+We can see that using Naive Bayes causes an accuracy level of `r round(confusionMatrixDirection6$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection6$overall[[1]] * 100, 2)`% of the time. We can still see that it thinks it will go up more often than not which is causing this issue in prediction. This is the worse than logistic regression and LDA, the same as QDA, and better than K Nearest Neighbors.
+
+#### Part I
+
+We are going to examine what causes the best predictions by looking at the accuracy rates.
+```{r}
+`Classification Name` <- c("Logistic Regression", "LDA", "QDA", "KNN", "Naive Bayes")
+Accuracy <- c(round(confusionMatrixDirection2$overall[[1]], 4),
+              round(confusionMatrixDirection3$overall[[1]], 4),
+              round(confusionMatrixDirection4$overall[[1]], 4),
+              round(confusionMatrixDirection5$overall[[1]], 4),
+              round(confusionMatrixDirection6$overall[[1]], 4))
+tableOfAccuracy <- as_tibble(cbind(`Classification Name`, Accuracy))
+knitr::kable(tableOfAccuracy, "pipe")
+```
+
+As we said before, we feel that the logistic regression and lDA models are the best in terms of accuracy and this table shows this. We can also see that K-Nearest Neighbors at K = 1 is the worst prediction technique.
+
+#### Part J
+
+First let us see if KNN works just with a K = 10.
+```{r}
+library(class)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+knn.pred <- knn(train = trainingDirection[ , "Lag2"], test = testingDirection[ , "Lag2"], 
+                cl = trainingDirection$Direction, 
+                k = 10)
+confusionMatrixDirection7 <- confusionMatrix(knn.pred, testingDirection$Direction)
+confusionMatrixDirection7
+```
+
+We can see that using K Nearest Neighbors with K = 10 causes an accuracy level of `r round(confusionMatrixDirection7$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection7$overall[[1]] * 100, 2)`% of the time. We can see that it thinks it should be up a lot more than it is, which is causing this issue in prediction. This is still the worst prediction method so far, but better than saying K = 1.
+
+We can also look at how predictions work if we add all the lag variables and use logistic regression first and then lda to see if this predicts better.
+```{r}
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionFitAllLag <- glm(Direction ~ . - Year - Volume - Today,
+                          trainingDirection, 
+                          family = "binomial")
+modelDirectionPredictionsAllLag <- predict(directionFitAllLag, type = "response", newdata = testingDirection)
+testingDirection$Direction <- ifelse(testingDirection$Direction == "Up", 1, 0)
+confusionMatrixDirection8 <- confusionMatrix(as.factor(as.numeric(modelDirectionPredictionsAllLag >= 0.5)), as.factor(testingDirection$Direction))
+confusionMatrixDirection8
+```
+
+We can see that the logistic regression model of all the lag variables has an accuracy level of `r round(confusionMatrixDirection8$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection8$overall[[1]] * 100, 2)`% of the time. This is actually a worse model than if we predict just using `Lag2`.
+
+Now let's look at the lda to see if that changes.
+```{r}
+library(MASS)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionLDA2 <- lda(Direction ~ . - Today - Year - Volume, trainingDirection)
+pred.lda <- predict(directionLDA2, testingDirection)
+confusionMatrixDirection9 <- confusionMatrix(pred.lda$class, as.factor(testingDirection$Direction))
+confusionMatrixDirection9
+```
+
+Using all the variables for lda gives us an accuracy level of `r round(confusionMatrixDirection9$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection9$overall[[1]] * 100, 2)`% of the time. By adding the other lags, this makes the lda model worse, which is interesting that this could happen.
+
+Lastly, we will see if having interaction helps. This will be used on the logistic regression modeling that we have said is the best.
+```{r}
+library(MASS)
+weekly <- as_tibble(Weekly)
+trainingDirection <- weekly %>%
+  filter(Year >= 1990 & Year <= 2008)
+testingDirection <- weekly %>%
+  filter(Year >= 2009 & Year <= 2010)
+directionFitInteraction <- glm(Direction ~ (. - Year - Today - Volume)^2,
+                               trainingDirection,
+                               family = "binomial")
+modelDirectionPredictionsInteraction <- predict(directionFitInteraction, type = "response", newdata = testingDirection)
+testingDirection$Direction <- ifelse(testingDirection$Direction == "Up", 1, 0)
+confusionMatrixDirection10 <- confusionMatrix(as.factor(as.numeric(modelDirectionPredictionsInteraction >= 0.5)), as.factor(testingDirection$Direction))
+confusionMatrixDirection10
+```
+
+We can see that the logistic regression model of all the lag variables and their interactions has an accuracy level of `r round(confusionMatrixDirection10$overall[[1]], 4)` or is correct `r round(confusionMatrixDirection10$overall[[1]] * 100, 2)`% of the time. Adding interaction shows that predicting what happens for the direction of the market does not help.
+
+Since these models are so similar in terms of accuracy, there might not be a best model that really works. The logistic and lda models using just `Lag 2` just might be the best.
+
+### Problem 4 {.tabset}
+
+#### Read in the data
+
+Here we will read in the `Auto` data.
+```{r}
+Auto <- as_tibble(ISLR2::Auto)
+```
+
+#### Part A
+
+Here we are going to make a new variable called `mpg01` which is 1 if mpg is greater than the median and 0 if it is less than the median.
+```{r}
+AutoUpdated <- Auto %>%
+  mutate(mpg01 = ifelse(mpg > median(mpg), 1, 0),
+         mpg01 = as.factor(mpg01)) %>% 
+  dplyr::select(-mpg)
+```
+
+#### Part B
+
+Now see what variables might have a relationship with the mpg01 variable.
+```{r}
+cor(AutoUpdated[ , 1:7], as.numeric(AutoUpdated$mpg01))
+```
+
+Here we can see that cylinders, displacement, horsepower, and weight have a pretty strong relationship with the `mpg01` variable.
+
+Let's see the breakdown of the counts of the `mpg01` variable and how our top 4 variables with a strong correlation look.
+```{r}
+AutoUpdated %>%
+  ggplot(aes(x = as.factor(mpg01), fill = as.factor(mpg01))) +
+  geom_bar(aes(y = ..count..)) +
+  labs(title = "Relationship Between the Lags by Year",
+       caption = "Eric Warren",
+       x = "Is it Above Median MPG?",
+       y = "Frequency",
+       fill = "Is it Above Median MPG?") +
+  scale_fill_discrete(labels = c("No", "Yes")) +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+AutoUpdated %>%
+  ggplot(aes(x = cylinders, y = mpg01)) +
+  geom_point(alpha = 0.5,
+             color = "blue") + 
+  labs(title = "Relationship Between the Numer of Cylinders and MPG in Relation to Median",
+       caption = "Eric Warren",
+       x = "Number of Cylinders",
+       y = "Above or Below Median") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+AutoUpdated %>%
+  ggplot(aes(x = horsepower, y = mpg01)) +
+  geom_point(alpha = 0.5,
+             color = "blue") + 
+  labs(title = "Relationship Between the Horsepower and MPG in Relation to Median",
+       caption = "Eric Warren",
+       x = "Horsepower",
+       y = "Above or Below Median") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+AutoUpdated %>%
+  ggplot(aes(x = weight, y = mpg01)) +
+  geom_point(alpha = 0.5,
+             color = "blue") + 
+  labs(title = "Relationship Between the Weight and MPG in Relation to Median",
+       caption = "Eric Warren",
+       x = "Weight",
+       y = "Above or Below Median") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+AutoUpdated %>%
+  ggplot(aes(x = displacement, y = mpg01)) +
+  geom_point(alpha = 0.5,
+             color = "blue") + 
+  labs(title = "Relationship Between the Displacement and MPG in Relation to Median",
+       caption = "Eric Warren",
+       x = "Displacement",
+       y = "Above or Below Median") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+```
+
+The breakdown for the `mpg01` variable is about the same. We can see that lower weight, displacement, and horsepower tend to have more cars with a MPGs above the median. For the number of cylinders it is hard to tell a relationship there. I am going to say that the variables with a strong relationship on `mpg01` are displacement, horsepower, and weight; I would have added cylinders too but it seems that when you look at just cylinders and `mpg01` you can not tell too much about it alone.
+
+#### Part C
+
+Here we are going to split the data into train and test data.
+```{r}
+set.seed(9)
+trainpct = 0.7
+n = nrow(AutoUpdated)
+sample <- sample(1:n, round(n * trainpct)) 
+train <- AutoUpdated[sample, ]
+test <- AutoUpdated[-sample, ]
+```
+
+#### Part D
+
+Here we are going to do LDA on this data.
+```{r}
+library(MASS)
+ldaModel <- lda(mpg01 ~ displacement + horsepower + weight, train)
+ldaModel
+
+pred.lda <- predict(ldaModel, test)
+table.lda <- table(predicted = test$mpg01, observed = pred.lda$class)
+accuracyTable.lda <- caret::confusionMatrix(table.lda)
+accuracyTable.lda
+accuracyTable.lda$overall[[1]] # Returns the accuracy of the model
+```
+
+After doing Linear Discriminant Analysis, this modeling technique was used to predict the `mpg01` something is or if the car is above the median value of cars in MPG. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.lda$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.lda$overall[[1]]) * 100, 2)`%. It is remarkable that this technique could do a pretty good job in predicting how the car's MPG compares to others using the provided predictors, as it got `r round((1 - accuracyTable.lda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Part E
+
+Here we are going to do QDA on this data.
+```{r}
+library(MASS)
+qdaModel <- qda(mpg01 ~ displacement + horsepower + weight, train)
+qdaModel
+
+pred.qda <- predict(qdaModel, test)
+table.qda <- table(predicted = test$mpg01, observed = pred.qda$class)
+accuracyTable.qda <- caret::confusionMatrix(table.qda)
+accuracyTable.qda
+accuracyTable.qda$overall[[1]] # Returns the accuracy of the model
+```
+
+After doing Quadratic Discriminant Analysis, this modeling technique was used to predict the `mpg01` something is or if the car is above the median value of cars in MPG. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.qda$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.qda$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting how the car's MPG compares to others using the provided predictors, as it got `r round((1 - accuracyTable.qda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Part F
+
+Here we are going to do logistic regression to see how everything looks.
+```{r}
+library(caret)
+logReg <- glm(mpg01 ~ cylinders + displacement + weight, train, family = "binomial")
+logReg.Preds <- predict(logReg, 
+                        type = "response", 
+                        newdata = test)
+confusionMatrix <- confusionMatrix(as.factor(as.numeric(logReg.Preds >= 0.5)), test$mpg01)
+confusionMatrix
+confusionMatrix$overall[[1]]
+```
+
+After doing Logistic Regression, this modeling technique was used to predict the `mpg01` something is or if the car is above the median value of cars in MPG. Using cross validation, it is shown that this model has an accuracy of `r round(confusionMatrix$overall[[1]], 4)` or also known as a classification error of `r round((1 - confusionMatrix$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting how the car's MPG compares to others using the provided predictors, as it got `r round((1 - confusionMatrix$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Part G
+
+Here we are going to do Naive Bayes on this data.
+```{r}
+library(e1071)
+nbModel <- naiveBayes(mpg01 ~ cylinders + displacement + weight, train)
+nbModel
+
+pred.nb <- predict(nbModel, test)
+table.nb <- table(predicted = test$mpg01, observed = pred.nb)
+accuracyTable.nb <- caret::confusionMatrix(table.nb)
+accuracyTable.nb
+accuracyTable.nb$overall[[1]]
+```
+
+After doing Naive Bayes, this modeling technique was used to predict the `mpg01` something is or if the car is above the median value of cars in MPG. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.nb$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.nb$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting how the car's MPG compares to others using the provided predictors, as it got `r round((1 - accuracyTable.nb$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Part H
+
+Here we are going to use K-Nearest Neighbors and see with K value is the best.
+```{r}
+set.seed(9)
+knn.resultsTable <- NULL
+k_optm <- NULL
+temp <- NULL
+knn.pred <- NULL
+for (i in 1:50) {
+  knn.pred <- knn(train = train[ , c("displacement", "cylinders", "weight")], test = test[ , c("displacement", "cylinders", "weight")], 
+                cl = train$mpg01, 
+                k = i)
+  k = i
+  k_optm[i] <- 100 * sum(test$mpg01 == knn.pred) / nrow(test)
+  temp <- data.frame(k, k_optm[i])
+  knn.resultsTable <- rbind(knn.resultsTable, temp)
+}
+knn.resultsTable[which.max(knn.resultsTable$k_optm.i.), ] # This tells us the max accuracy
+```
+
+Here we can see that the best k value is a k = `r knn.resultsTable[which.max(knn.resultsTable$k_optm.i.), ][[1]]`, which gives us the smallest error so we are going to use this for our accuracy rating for this model.
+```{r}
+knn.pred <- knn(train = train[ ,c("displacement", "cylinders", "weight")], test = test[ ,c("displacement", "cylinders", "weight")], 
+                cl = train$mpg01, 
+                k = 13)
+table.knn <- table(knn.pred, test$mpg01)
+accuracyTable.knn <- caret::confusionMatrix(table.knn)
+accuracyTable.knn
+accuracyTable.knn$overall[[1]]
+```
+
+After doing K-Nearest Neighbors, this modeling technique was used to predict the `mpg01` something is or if the car is above the median value of cars in MPG. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.knn$overall[[1]] * 100, 2)`% or also known as a classification error of `r round((1 - accuracyTable.knn$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting how the car's MPG compares to others using the provided predictors, as it got `r round((1 - accuracyTable.knn$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+### Problem 5
+
+#### Load in Boston Data
+
+Here we will load in the Boston data.
+```{r}
+Boston <- as_tibble(Boston)
+```
+
+#### Creating Response Variable
+
+Here we are going to create a response variable called `crime01` to determine if the crime rate is below or above the median. Below is equal to zero and above is equal to one.
+```{r}
+BostonUpdated <- Boston %>%
+  mutate(crime01 = ifelse(crim > median(crim), 1, 0),
+         crime01 = as.factor(crime01)) %>% 
+  dplyr::select(-crim)
+```
+
+#### What Relationships are Present
+
+We are going to see what relationships might be present.
+```{r}
+correlationsBoston <- as_tibble(cbind(colnames(BostonUpdated[ ,1:ncol(BostonUpdated) - 1]), cor(BostonUpdated[ ,1:ncol(BostonUpdated) - 1], as.numeric(BostonUpdated$crime01))[1:13]))
+names(correlationsBoston) <- c("variable", "correlation")
+correlationsBoston$correlation <- as.numeric(correlationsBoston$correlation)
+correlationsBostonUpdated <- correlationsBoston %>%
+  filter(abs(correlation) >= 0.5) # Saying that 0.5 is a strong correlation
+correlationsBostonUpdated
+```
+
+From this, we can see that the variables that have a strong correlation (which is saying that it is at least an absolute value of 0.5 or higher) are `r correlationsBostonUpdated$variable[1:nrow(correlationsBostonUpdated)]`.
+
+#### What Predictors Make Sense
+
+We will use a logistic regression model to see what predictors should be kept in the model.
+```{r}
+bostonFit <- glm(crime01 ~ ., BostonUpdated[c("crime01", correlationsBostonUpdated$variable[1:nrow(correlationsBostonUpdated)])], family = "binomial")
+summary(bostonFit)
+```
+
+We can see with an alpha level of 0.05, that the significantly significant variables are rad, tax, and nox. We will make an updated model with these to make sure they are still important.
+```{r}
+bostonFitUpdated <- glm(crime01 ~ rad + tax + nox, BostonUpdated, family = "binomial")
+summary(bostonFitUpdated)
+```
+
+Now they are all significant, so these are the variables we should use in making our predictions.
+
+#### Making Testing and Training Data
+
+Here we are going to split the data to use for testing how the models do.
+```{r}
+set.seed(9)
+trainpct = 0.7
+n = nrow(BostonUpdated)
+sample <- sample(1:n, round(n * trainpct)) 
+train <- BostonUpdated[sample, ]
+test <- BostonUpdated[-sample, ]
+```
+
+#### Logistic Regression Accuracy
+
+We are going to look at the accuracy level of our logistic regression model for prediction purposes.
+```{r}
+library(caret)
+logReg <- glm(crime01 ~ rad + tax + nox, train, family = "binomial")
+logReg.Preds <- predict(logReg, 
+                        type = "response", 
+                        newdata = test)
+confusionMatrix <- confusionMatrix(as.factor(as.numeric(logReg.Preds >= 0.5)), test$crime01)
+confusionMatrix
+confusionMatrix$overall[[1]]
+```
+
+After doing Logistic Regression, this modeling technique was used to predict the `crime01` something is or if the crime rate in an area is above the median crime rate around Boston. Using cross validation, it is shown that this model has an accuracy of `r round(confusionMatrix$overall[[1]], 4)` or also known as a classification error of `r round((1 - confusionMatrix$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting if an area has a higher than average crime rate using the predictors we decided, as it got `r round((1 - confusionMatrix$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### LDA Accuracy
+
+We are going to look at the accuracy level of our Linear Discriminant Analysis model for prediction purposes.
+```{r}
+library(MASS)
+ldaModel <- lda(crime01 ~ rad + tax + nox, train)
+ldaModel
+
+pred.lda <- predict(ldaModel, test)
+table.lda <- table(predicted = test$crime01, observed = pred.lda$class)
+accuracyTable.lda <- caret::confusionMatrix(table.lda)
+accuracyTable.lda
+accuracyTable.lda$overall[[1]] # Returns the accuracy of the model
+```
+
+After doing LDA, this modeling technique was used to predict the `crime01` something is or if the crime rate in an area is above the median crime rate around Boston. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.lda$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.lda$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting if an area has a higher than average crime rate using the predictors we decided, as it got `r round((1 - accuracyTable.lda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### QDA Accuracy
+
+We are going to look at the accuracy level of our Quadratic Discriminant Analysis model for prediction purposes.
+```{r}
+library(MASS)
+qdaModel <- qda(crime01 ~ rad + tax + nox, train)
+qdaModel
+
+pred.qda <- predict(qdaModel, test)
+table.qda <- table(predicted = test$crime01, observed = pred.qda$class)
+accuracyTable.qda <- caret::confusionMatrix(table.qda)
+accuracyTable.qda
+accuracyTable.qda$overall[[1]] # Returns the accuracy of the model
+```
+
+After doing LDA, this modeling technique was used to predict the `crime01` something is or if the crime rate in an area is above the median crime rate around Boston. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.qda$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.qda$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting if an area has a higher than average crime rate using the predictors we decided, as it got `r round((1 - accuracyTable.qda$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Naive Bayes Accuracy
+
+We are going to look at the accuracy level of our Naive Bayes model for prediction purposes.
+```{r}
+library(e1071)
+nbModel <- naiveBayes(crime01 ~ rad + tax + nox, train)
+nbModel
+
+pred.nb <- predict(nbModel, test)
+table.nb <- table(predicted = test$crime01, observed = pred.nb)
+accuracyTable.nb <- caret::confusionMatrix(table.nb)
+accuracyTable.nb
+accuracyTable.nb$overall[[1]]
+```
+
+After doing Naive Bayes, this modeling technique was used to predict the `crime01` something is or if the crime rate in an area is above the median crime rate around Boston. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.nb$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.nb$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting if an area has a higher than average crime rate using the predictors we decided, as it got `r round((1 - accuracyTable.nb$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### K-Nearest Neighbors
+
+We are going to look at the accuracy level of our K-Nearest Neighbors model for prediction purposes.
+
+First, we are going to see which value of K gives us the highest accuracy.
+Here we are going to use K-Nearest Neighbors and see with K value is the best.
+```{r}
+set.seed(9)
+knn.resultsTable <- NULL
+k_optm <- NULL
+temp <- NULL
+knn.pred <- NULL
+for (i in 1:50) {
+  knn.pred <- knn(train = train[ , c("tax", "nox", "rad")], test = test[ , c("tax", "nox", "rad")], 
+                cl = train$crime01, 
+                k = i)
+  k = i
+  k_optm[i] <- 100 * sum(test$crime01 == knn.pred) / nrow(test)
+  temp <- data.frame(k, k_optm[i])
+  knn.resultsTable <- rbind(knn.resultsTable, temp)
+}
+knn.resultsTable[which.max(knn.resultsTable$k_optm.i.), ] # This tells us the max accuracy
+```
+
+Here we can see that the best k value is a k = `r knn.resultsTable[which.max(knn.resultsTable$k_optm.i.), ][[1]]`, which gives us the smallest error so we are going to use this for our accuracy rating for this model.
+```{r}
+knn.pred <- knn(train = train[ , c("tax", "nox", "rad")], test = test[ , c("tax", "nox", "rad")], 
+                cl = train$crime01, 
+                k = 1)
+table.knn <- table(knn.pred, test$crime01)
+accuracyTable.knn <- caret::confusionMatrix(table.knn)
+accuracyTable.knn
+accuracyTable.knn$overall[[1]]
+```
+
+After doing K-Nearest Neighbors, this modeling technique was used to predict the `crime01` something is or if the crime rate in an area is above the median crime rate around Boston. Using cross validation, it is shown that this model has an accuracy of `r round(accuracyTable.knn$overall[[1]], 4)` or also known as a classification error of `r round((1 - accuracyTable.knn$overall[[1]]) * 100, 2)`%. This technique could do a pretty good job in predicting if an area has a higher than average crime rate using the predictors we decided, as it got `r round((1 - accuracyTable.knn$overall[[1]]) * nrow(test), 0)` out of our `r nrow(test)` test data observations wrong.
+
+#### Conclusions: Which Model is the Best?
+
+Here we are going to make a table of the classification names and their accuracy levels to see which one is the best to use.
+```{r}
+`Classification Name` <- c("Logistic Regression", "LDA", "QDA", "KNN", "Naive Bayes")
+Accuracy <- c(round(confusionMatrix$overall[[1]], 4),
+              round(accuracyTable.lda$overall[[1]], 4),
+              round(accuracyTable.qda$overall[[1]], 4),
+              round(accuracyTable.knn$overall[[1]], 4),
+              round(accuracyTable.nb$overall[[1]], 4))
+tableOfAccuracy <- as_tibble(cbind(`Classification Name`, Accuracy))
+knitr::kable(tableOfAccuracy, "pipe")
+```
+
+As we can see, the best modeling technique is to use `r tableOfAccuracy[which.max(tableOfAccuracy$Accuracy), ][[1]]`, as it was described before. This accuracy is clearly much better than the other options and is why we should use it. We should also use the predictor variables of `rad`, `tax`, and `nox` when predicting areas with above average crime rates.
