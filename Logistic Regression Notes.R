@@ -80,7 +80,7 @@ pred.lda1 <- predict(lda1, data.iris)
 pred.lda1$class
 
 # how to quantify the misclassification error?
-sum(data.iris$Specie != pred.lda1$class) / nrow(data.iris)
+sum(data.iris$Species != pred.lda1$class) / nrow(data.iris)
 
 # Now let us use petal dimensions
 lda2 <- lda(Species ~ Petal.Length + Petal.Width, data.iris)
