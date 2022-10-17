@@ -241,8 +241,10 @@ Finally, we compute the correlation between the 20 imputed values and the actual
 
 ```{r chunk27}
 cor(Xapp[ismiss], X[ismiss])
-plot(X[ismiss],Xapp[ismiss],pch=16)
-abline(0,1)
+plot(X[ismiss],
+     Xapp[ismiss],
+     pch = 16)
+abline(0, 1)
 ```
 
 In this lab, we implemented Algorithm 12.1 ourselves for didactic purposes. However, a reader who wishes to apply matrix completion to their data should use the `softImpute` package on `CRAN`, which provides a very efficient implementation of a generalization of this algorithm.
