@@ -261,4 +261,8 @@ plot(X[ismiss],
      Xapp2[ismiss],
      pch = 16)
 abline(0, 1)
+
+# To find which approximation is the best
+sum((X[ismiss] - Xapp[ismiss]) ** 2)
+sum((X[ismiss] - Xapp2[ismiss]) ** 2)
 ```
