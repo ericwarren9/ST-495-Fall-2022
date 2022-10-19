@@ -34,7 +34,7 @@ vaersDataUpdated <- vaersData %>%
          DISABLE = ifelse(is.na(DISABLE), "N", DISABLE),
          RECOVD = ifelse(is.na(RECOVD), "U", RECOVD),
          V_ADMINBY = ifelse(is.na(V_ADMINBY), "UNK", V_ADMINBY),
-         V_FUNDBY = ifelse(is.na(V_FUNDBY), "N", V_FUNDBY),
+         V_FUNDBY = ifelse(is.na(V_FUNDBY), "OTH", V_FUNDBY),
          BIRTH_DEFECT = ifelse(is.na(BIRTH_DEFECT), "N", BIRTH_DEFECT),
          OFC_VISIT = ifelse(is.na(OFC_VISIT), "N", OFC_VISIT)
          )
