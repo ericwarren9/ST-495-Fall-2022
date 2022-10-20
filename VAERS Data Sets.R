@@ -11,11 +11,11 @@ setwd("~/ST-495-Fall-2022/FinalProjectRawData/RegularData")
 
 vaersData <- bind_rows(lapply(filesData, read_csv))
 
-filesSymptoms <- list.files("~/ST-495-Fall-2022/FinalProjectRawData/SymptomData")
+filesSymptoms <- list.files("~/ST-495-Fall-2022/FinalProjectRawData/SymptomData") # Imports all VAERS data (big data sets)
 
 setwd("~/ST-495-Fall-2022/FinalProjectRawData/SymptomData")
 
-symptomData <- bind_rows(lapply(filesSymptoms, read_csv))
+symptomData <- bind_rows(lapply(filesSymptoms, read_csv)) # Imports all symptoms data
 
 setwd("~/ST-495-Fall-2022")
 
@@ -55,14 +55,15 @@ symptomDataUpdated <- symptomDataSelected %>%
   dplyr::select(VAERS_ID, SYMPTOM_TEXT) %>%
   ungroup() 
 
-# Clean the columns up
+# Clean the SYMPTOM_TEXT column up
 symptomDataUpdated <- symptomDataUpdated[! duplicated(symptomDataUpdated), ]
 symptomDataUpdated$SYMPTOM_TEXT <- gsub("NA, ", "", symptomDataUpdated$SYMPTOM_TEXT)
 symptomDataUpdated$SYMPTOM_TEXT <- gsub(", NA", "", symptomDataUpdated$SYMPTOM_TEXT)
-symptomDataUpdated$SYMPTOM_TEXT <- ifelse(grepl("No adverse event", symptomDataUpdated$SYMPTOM_TEXT), 'None', symptomDataUpdated$SYMPTOM_TEXT)
+symptomDataUpdated$SYMPTOM_TEXT <- ifelse(grepl("No adverse event", symptomDataUpdated$SYMPTOM_TEXT), "None", symptomDataUpdated$SYMPTOM_TEXT)
 
 # Merge Data Into One File
 finalVAERSData <- merge(vaersDataUpdated, symptomDataUpdated, by = "VAERS_ID") # Note there are 5 people who are in the regular data file but did not get the vaccine so we excluded them.
+
 finalVAERSData <- finalVAERSData %>%
   dplyr::select(-VAERS_ID)
 
