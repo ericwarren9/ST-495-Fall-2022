@@ -4,7 +4,6 @@
 # Testing independence in 2-way tables ----------------------------------
 
 data.cars <- mtcars
-help(mtcars)
 
 x1 <- mtcars$cyl
 x2 <- mtcars$vs
@@ -13,7 +12,7 @@ table(x1)
 table(x2)
 
 # Test for association: use the chi-square test
-data.table = table(x1,x2)
+data.table <- table(x1,x2)
 data.table
 
 
@@ -28,8 +27,7 @@ chisq.test(data.table)
 fisher.test(data.table)
 
 # Three categorical variables
-data.ucb = UCBAdmissions
-help("UCBAdmissions")
+data.ucb <- UCBAdmissions
 
 # let's ignore dept for a second
 table.ucb <- margin.table(data.ucb, c(1, 2))
