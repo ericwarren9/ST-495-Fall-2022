@@ -41,7 +41,7 @@ data2 <- data.frame(as.matrix(dtm2))
 
 # Do statistical analysis -------------------------------------------------
 
-round(data1[1:5,501:509],3)
+round(data1[1:5, 501:509], 3)
 
 # find frequent terms
 findFreqTerms(dtm1, 0.2)
