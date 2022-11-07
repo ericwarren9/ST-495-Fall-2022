@@ -130,7 +130,7 @@ train <- c(sample(50, 35), 50 + sample(20, 14))
 data.train <- lsa.reuter[train, ]
 data.test <- lsa.reuter[-train, ]
 
-svm.model <- svm(true.labs~., data = data.train)
+svm.model <- svm(true.labs ~ ., data = data.train)
 svm.pred <- predict(svm.model, data.test[ , -1])
 
 table(svm.pred, data.test$true.labs)
