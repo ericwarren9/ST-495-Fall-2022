@@ -8,12 +8,10 @@ library(tidyverse)
 vaccines <- read_csv("~/ST-495-Fall-2022/FinalProjectUsedData/2016-21VAERSData.csv")
 
 
-
-
 # Do EDA on data (look at how variables are) ------------------------------
 
 vaccines %>%
-  select(L_THREAT, ER_VISIT, HOSPITAL, HOSPDAYS, X_STAY)
+  dplyr::select(L_THREAT, ER_VISIT, HOSPITAL, HOSPDAYS, X_STAY)
 
 table(vaccines$L_THREAT)
 table(vaccines$HOSPDAYS)
@@ -24,7 +22,7 @@ table(vaccines$DIED)
 # Manipulate data ---------------------------------------------------------
 
 vaccines2 <- vaccines %>% 
-  select(-c(CAGE_YR, CAGE_MO, RPT_DATE, DATEDIED, VAX_DATE, ONSET_DATE, LAB_DATA, PRIOR_VAX, SPLTTYPE, FORM_VERS, TODAYS_DATE, ALLERGIES, OTHER_MEDS, HISTORY)) %>%
+  dplyr::select(-c(CAGE_YR, CAGE_MO, RPT_DATE, DATEDIED, VAX_DATE, ONSET_DATE, LAB_DATA, PRIOR_VAX, SPLTTYPE, FORM_VERS, TODAYS_DATE, ALLERGIES, OTHER_MEDS, HISTORY)) %>%
   mutate(OCCUR_YEAR = substr(RECVDATE, 1, 4),
          STATE = toupper(STATE),
          ER_VISIT = ifelse(is.na(ER_VISIT), "N", ER_VISIT),
@@ -33,12 +31,14 @@ vaccines2 <- vaccines %>%
          CUR_ILL = ifelse(grepl("No", CUR_ILL), "N", "Y"),
          HOSPDAYS = ifelse(HOSPDAYS >= 50, 50, HOSPDAYS),
          DIED = factor(DIED)) %>%
-  select(-c(RECVDATE, SYMPTOM_TEXT)) %>%
-  select(OCCUR_YEAR, STATE, everything())
+  dplyr::select(-c(RECVDATE, SYMPTOM_TEXT)) %>%
+  dplyr::select(OCCUR_YEAR, STATE, everything())
 
 vaccines3 <- vaccines2[rowSums(is.na(vaccines2)) == 0, ] # Get rid of missing values
 
 vaccines4 <- vaccines3[vaccines3$STATE %in% state.abb, ]
+
+write_csv(vaccines4, "~/ST-495-Fall-2022/FinalProjectUsedData/2016-21VAERSDataUpdated.csv")
 
 
 # Split into train and test data ------------------------------------------
