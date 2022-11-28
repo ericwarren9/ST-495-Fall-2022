@@ -24,7 +24,7 @@ setwd("~/ST-495-Fall-2022")
 
 # Do VAERS Data Here
 vaersDataUpdated <- vaersData %>%
-  select(-SYMPTOM_TEXT) %>%
+  dplyr::select(-SYMPTOM_TEXT) %>%
   mutate(RECVDATE = as.Date(RECVDATE, tryFormats = "%m/%d/%Y"),
          RPT_DATE = as.Date(RPT_DATE, tryFormats = "%m/%d/%Y"),
          DATEDIED = as.Date(DATEDIED, tryFormats = "%m/%d/%Y"),

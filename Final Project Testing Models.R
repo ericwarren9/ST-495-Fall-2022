@@ -213,7 +213,43 @@ ggplot(testingErrorModel, aes(x = Models, y = `Testing Error Rates`)) +
   geom_text(aes(label = `Testing Error Rates`), vjust = 1.6, color = "white", size = 3.5) +
   labs(title = "Logistic Regression Model is the Best \nFor Testing Data",
        x = "Model Type",
-       y = "Error Rates of the Model",) +
+       y = "Error Rates of the Model") +
+  theme_bw() +
+  theme(plot.title = element_text(color = "blue",
+                                  face = "bold",
+                                  size = 16,
+                                  hjust = 0.5))
+
+
+# Making predictions and assign to observations ---------------------------
+
+# Do training data
+logreg.pred.train <- predict(logReg2, trainingData, "response")
+trainingData$PROBABILITY <- logreg.pred.train
+
+# Do testing data
+logreg.pred.test <- predict(logReg2, testingData, "response")
+testingData$PROBABILITY <- logreg.pred.test
+
+# Combine into one set
+allPatients <- rbind(trainingData, testingData)
+
+# Show Error Rates
+died.pred <- ifelse(allPatients$PROBABILITY >= .5, "Y", "N")
+totalError <- sum(allPatients$DIED != factor(died.pred)) / nrow(allPatients)
+totalError
+
+# Make confusion table showing how well model did
+library(caret)
+confusionMatrixTotalError <- confusionMatrix(factor(died.pred), allPatients$DIED)
+confusionMatrixTotalError
+
+# See if there is a relationship between age and probability of death
+ggplot(allPatients, aes(x = AGE_YRS, y = PROBABILITY)) +
+  geom_point(alpha = 0.05, color = "red") +
+  labs(title = "Relationship Between Age \nand Probability of Death",
+       x = "Age (in years)",
+       y = "Probability of Death") +
   theme_bw() +
   theme(plot.title = element_text(color = "blue",
                                   face = "bold",
